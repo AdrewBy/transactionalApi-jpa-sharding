@@ -1,0 +1,7 @@
+spring:
+  flyway:
+    url: jdbc:postgresql://db3:5432/transactionalapi
+    user: postgres
+    password: postgres
+    placeholders:
+      shard: 3
