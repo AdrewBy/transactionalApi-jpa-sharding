@@ -17,7 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Builder(toBuilder = true)
-@Table(schema = "transaction", name = "wallets")
+@Table( name = "wallets")
 public class WalletEntity {
 
     @Id

@@ -17,7 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Builder(toBuilder = true)
 @Entity
-@Table(schema = "transactional", name = "payment_requests")
+@Table(name = "payment_requests")
 public class PaymentEntity {
 
     @Id

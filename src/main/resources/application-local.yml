@@ -2,125 +2,52 @@ server:
   port: 8080
 
 spring:
-  shardingsphere:
-    datasource:
-      names: ds0, ds1, ds2, ds3  # Имена источников данных
-      ds0:
-        url: jdbc:postgresql://localhost:5432/db0
-        username: postgres
-        password: postgres
-        driver-class-name: org.postgresql.Driver
-      ds1:
-        url: jdbc:postgresql://localhost:5432/db1
-        username: postgres
-        password: postgres
-        driver-class-name: org.postgresql.Driver
-      ds2:
-        url: jdbc:postgresql://localhost:5432/db2
-        username: postgres
-        password: postgres
-        driver-class-name: org.postgresql.Driver
-      ds3:
-        url: jdbc:postgresql://localhost:5432/db3
-        username: postgres
-        password: postgres
-        driver-class-name: org.postgresql.Driver
+  datasource:
+    driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
+    url: jdbc:shardingsphere:classpath:sharding.yaml?allowLoadLocalInfile=true
+    hikari:
+      connection-timeout: 30000
+      initialization-fail-timeout: 60000
 
-    rules:
-      sharding:
-        tables:
-          wallets:
-            actual-data-nodes: ds$->{0..3}.wallets_$->{0..3}  # Шардирование по 4 шардам
-            table-strategy:
-              standard:
-                sharding-column: uid  # Ключ шардирования
-                sharding-algorithm-name: wallet-hash-mod
-            key-generate-strategy:
-              column: uid
-              key-generator-name: uuid
-          payment_requests:
-            actual-data-nodes: ds$->{0..3}.payment_requests_$->{0..3}
-            table-strategy:
-              standard:
-                sharding-column: wallet_uid
-                sharding-algorithm-name: wallet-hash-mod
-            key-generate-strategy:
-              column: uid
-              key-generator-name: uuid
-          transactions:
-            actual-data-nodes: ds$->{0..3}.transactions_$->{0..3}
-            table-strategy:
-              standard:
-                sharding-column: wallet_uid
-                sharding-algorithm-name: wallet-hash-mod
-            key-generate-strategy:
-              column: uid
-              key-generator-name: uuid
-          top_up_requests:
-            actual-data-nodes: ds$->{0..3}.top_up_requests_$->{0..3}
-            table-strategy:
-              standard:
-                sharding-column: payment_request_uid
-                sharding-algorithm-name: payment-hash-mod
-            key-generate-strategy:
-              column: uid
-              key-generator-name: uuid
-          withdrawal_requests:
-            actual-data-nodes: ds$->{0..3}.withdrawal_requests_$->{0..3}
-            table-strategy:
-              standard:
-                sharding-column: payment_request_uid
-                sharding-algorithm-name: payment-hash-mod
-            key-generate-strategy:
-              column: uid
-              key-generator-name: uuid
-          transfer_requests:
-            actual-data-nodes: ds$->{0..3}.transfer_requests_$->{0..3}
-            table-strategy:
-              standard:
-                sharding-column: payment_request_uid
-                sharding-algorithm-name: payment-hash-mod
-            key-generate-strategy:
-              column: uid
-              key-generator-name: uuid
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate.transaction.jta.platform: org.hibernate.engine.transaction.jta.platform.internal.JBossStandAloneJtaPlatform
+      hibernate.transaction.coordinator_class: jta
+      hibernate.format_sql: true
 
-        sharding-algorithms:
-          wallet-hash-mod:
-            type: HASH_MOD
-            props:
-              sharding-count: 4  # Количество шардов
-          payment-hash-mod:
-            type: HASH_MOD
-            props:
-              sharding-count: 4
+  flyway:
+    enabled: false
 
-        key-generators:
-          uuid:
-            type: UUID
-    props:
-      sql-show: true
+#  autoconfigure:
+#    exclude:
+#      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+#      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
 
 
-#  flyway:
-#    enabled: false
-#    schemas: transaction
-#    baseline-on-migrate: true
-#    default-schema: transaction
-#    locations: classpath:db/migration  # Локации миграций
-#    url: jdbc:postgresql://localhost:5432/db0  # Используем db0, т.к. он в шардинге ds0
-#    user: postgres
-#    password: postgres
-#  flyway:
-#    enabled: true
-#    baseline-on-migrate: true
-#    url: jdbc:postgresql://localhost:5432/db0  # Используем db0, т.к. он в шардинге ds0
-#    user: postgres
-#    password: postgres
-
+flyway:
+  dataSources:
+    - url: jdbc:postgresql://localhost:5432/ds0
+      username: postgres
+      password: postgres
+    - url: jdbc:postgresql://localhost:5432/ds1
+      username: postgres
+      password: postgres
+    - url: jdbc:postgresql://localhost:5432/ds2
+      username: postgres
+      password: postgres
+    - url: jdbc:postgresql://localhost:5432/ds3
+      username: postgres
+      password: postgres
 
 logging:
   level:
-    org.flywaydb: DEBUG
+    org.apache.shardingsphere.sql: TRACE
+    org.apache.shardingsphere: TRACE
+    com.arjuna: DEBUG
+    com.ustsinau: TRACE
     org.springframework.web: DEBUG
     org.springframework.security: DEBUG
     org.springframework.boot.web.servlet.filter: DEBUG

@@ -17,7 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Builder(toBuilder = true)
-@Table(schema = "transactional",name = "transfer_requests")
+@Table(name = "transfer_requests")
 public class TransferEntity {
 
     @Id

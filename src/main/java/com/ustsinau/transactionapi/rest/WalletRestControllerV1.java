@@ -36,16 +36,14 @@ public class WalletRestControllerV1 {
         return ResponseEntity.ok(wallet);
     }
 
-
     @PostMapping("/user/create-wallet")
     public WalletDto create(@RequestBody WalletCreateRequestDto request) {
 
         return walletMapper.map(walletService.createWallet(request));
     }
 
-
     @PostMapping
-    public WalletDto updateIndividual(@RequestBody WalletDto request) {
+    public WalletDto updateWallet(@RequestBody WalletDto request) {
         return walletService.updateWallet(request);
     }
 

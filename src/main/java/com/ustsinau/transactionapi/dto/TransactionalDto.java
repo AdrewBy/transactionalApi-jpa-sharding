@@ -1,7 +1,6 @@
 package com.ustsinau.transactionapi.dto;
 
 
-import com.ustsinau.transactionapi.dto.request.PaymentRequestDto;
 import lombok.*;
 
 import java.math.BigDecimal;

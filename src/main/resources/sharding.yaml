@@ -1,0 +1,124 @@
+#mode:
+#  type: Standalone
+#  repository:
+#    type: File
+
+#props:
+#  proxy-frontend-database-protocol-type: PostgreSQL
+#  proxy-backend-query-with-meta-data: true
+#  sql-show: true
+
+dataSources:
+  ds0:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: org.postgresql.Driver
+    jdbcUrl: jdbc:postgresql://localhost:5432/ds0
+    username: postgres
+    password: postgres
+  ds1:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: org.postgresql.Driver
+    jdbcUrl: jdbc:postgresql://localhost:5432/ds1
+    username: postgres
+    password: postgres
+  ds2:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: org.postgresql.Driver
+    jdbcUrl: jdbc:postgresql://localhost:5432/ds2
+    username: postgres
+    password: postgres
+  ds3:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: org.postgresql.Driver
+    jdbcUrl: jdbc:postgresql://localhost:5432/ds3
+    username: postgres
+    password: postgres
+
+
+rules:
+  - !TRANSACTION
+    defaultType: XA
+    providerType: Narayana
+
+  - !AUTHORITY
+        users:
+          - user: postgres
+            password: postgres
+        privilege:
+          type: ALL_PERMITTED
+
+#  - !BROADCAST
+#    tables: # Broadcast tables
+#      - wallet_types
+
+  - !SHARDING
+    tables:
+      wallet_types:
+        actualDataNodes: ds${0..3}.wallet_types
+        tableStrategy:
+          standard:
+            shardingColumn: uid
+            shardingAlgorithmName: wallet-hash-mod
+
+
+      wallets:
+        actualDataNodes: ds${0..3}.wallets
+        tableStrategy:
+          standard:
+            shardingColumn: uid
+            shardingAlgorithmName: wallet-hash-mod
+
+      payment_requests:
+        actualDataNodes: ds${0..3}.payment_requests
+        tableStrategy:
+          standard:
+            shardingColumn: wallet_uid
+            shardingAlgorithmName: wallet-hash-mod
+
+      transactions:
+        actualDataNodes: ds${0..3}.transactions
+        tableStrategy:
+          standard:
+            shardingColumn: wallet_uid
+            shardingAlgorithmName: wallet-hash-mod
+
+      top_up_requests:
+        actualDataNodes: ds${0..3}.top_up_requests
+        tableStrategy:
+          standard:
+            shardingColumn: payment_request_uid
+            shardingAlgorithmName: payment-hash-mod
+
+      withdrawal_requests:
+        actualDataNodes: ds${0..3}.withdrawal_requests
+        tableStrategy:
+          standard:
+            shardingColumn: payment_request_uid
+            shardingAlgorithmName: payment-hash-mod
+
+      transfer_requests:
+        actualDataNodes: ds${0..3}.transfer_requests
+        tableStrategy:
+          standard:
+            shardingColumn: payment_request_uid
+            shardingAlgorithmName: payment-hash-mod
+
+    bindingTables:
+      - payment_requests, transactions
+
+    shardingAlgorithms:
+      wallet-hash-mod:
+        type: CLASS_BASED
+        props:
+          sql-show: true
+          strategy: STANDARD
+#          algorithmClassName: ds${(uid.hashCode() % 2 + 2) % 2}
+          algorithmClassName: com.ustsinau.transactionapi.shardingAlgorithm.UUIDHashModShardingAlgorithm
+
+      payment-hash-mod:
+        type: CLASS_BASED
+        props:
+          strategy: STANDARD
+          algorithmClassName: com.ustsinau.transactionapi.shardingAlgorithm.UUIDHashModShardingAlgorithm
+
+

@@ -12,4 +12,6 @@ import java.util.UUID;
 public interface WalletTypeRepository extends JpaRepository<WalletTypeEntity, UUID> {
 
     <T> Optional<T> findByNameAndCurrencyCode(String walletTypeName, String currencyCode);
+
+    WalletTypeEntity findByCurrencyCode(String currencyCode);
 }

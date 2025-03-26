@@ -14,7 +14,6 @@ import com.ustsinau.transactionapi.exception.WalletNotFoundException;
 import com.ustsinau.transactionapi.mappers.TransactionalMapper;
 import com.ustsinau.transactionapi.repository.TransferRepository;
 import com.ustsinau.transactionapi.repository.WalletRepository;
-import com.ustsinau.transactionapi.utils.UuidFromString;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 
 @Slf4j
@@ -35,16 +35,17 @@ public class TransferService {
     private final PaymentService paymentService;
     private final TransactionService transactionService;
 
-    private final UuidFromString fromString;
     private final TransactionalMapper transactionalMapper;
+
+    private final BigDecimal COMMISSION_RATE = new BigDecimal("0.01");
 
     @Transactional
     public TransactionResponse createTransferPayment(TransferRequestDto request) {
 
-        WalletEntity walletFrom = walletRepository.findById(fromString.getUuidFromString(request.getWalletUidFrom()))
+        WalletEntity walletFrom = walletRepository.findById(UUID.fromString(request.getWalletUidFrom()))
                 .orElseThrow(() -> new WalletNotFoundException("Wallet not found with UID: " + request.getWalletUidFrom(), "WALLET_NOT_FOUND"));
 
-        WalletEntity walletTo = walletRepository.findById(fromString.getUuidFromString(request.getWalletUidTo()))
+        WalletEntity walletTo = walletRepository.findById(UUID.fromString(request.getWalletUidTo()))
                 .orElseThrow(() -> new WalletNotFoundException("Wallet not found with UID: " + request.getWalletUidTo(), "WALLET_NOT_FOUND"));
 
         // Получаем курс конвертации с вычетом комиссии
@@ -88,7 +89,7 @@ public class TransferService {
                                 .type(TypeTransaction.valueOf(request.getType()))
                                 .state(TransactionState.valueOf(request.getState()))
                                 .amount(request.getAmount())
-                                .userUid(fromString.getUuidFromString(request.getUserUid()))
+                                .userUid(UUID.fromString(request.getUserUid()))
                                 .walletName(walletFrom.getName())
                                 .wallet(walletFrom)
                                 .build());
@@ -109,8 +110,7 @@ public class TransferService {
         BigDecimal systemRate = new BigDecimal(request.getSystemRate());
 
         // Рассчитываем комиссию (например, 1% от суммы перевода)
-        BigDecimal commissionRate = new BigDecimal("0.01");
-        BigDecimal commission = request.getAmount().multiply(commissionRate);
+        BigDecimal commission = request.getAmount().multiply(COMMISSION_RATE);
 
         // Вычитаем комиссию из суммы перевода
         BigDecimal amountAfterCommission = request.getAmount().subtract(commission);

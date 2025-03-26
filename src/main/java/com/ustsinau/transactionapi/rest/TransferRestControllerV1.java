@@ -21,7 +21,6 @@ public class TransferRestControllerV1 {
 
     private final TransferService transferService;
 
-
     @PostMapping
     public ResponseEntity<TransactionResponse> createTransferRequest(@RequestBody TransferRequestDto request) {
         TransactionResponse response = transferService.createTransferPayment(request);

@@ -17,7 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Builder(toBuilder = true)
-@Table(schema = "transactional",name = "withdrawal_requests")
+@Table(name = "withdrawal_requests")
 public class WithdrawalEntity {
 
     @Id

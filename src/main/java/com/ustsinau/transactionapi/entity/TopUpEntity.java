@@ -17,7 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Builder(toBuilder = true)
-@Table(schema = "transactional",name = "top_up_requests")
+@Table(name = "top_up_requests")
 public class TopUpEntity {
 
 

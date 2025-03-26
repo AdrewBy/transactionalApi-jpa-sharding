@@ -1,7 +1,6 @@
 package com.ustsinau.transactionapi.service;
 
 import com.ustsinau.transactionapi.dto.TransactionalDto;
-import com.ustsinau.transactionapi.dto.request.TransactionRequestDto;
 import com.ustsinau.transactionapi.dto.response.TransactionResponse;
 import com.ustsinau.transactionapi.dto.response.TransactionStatusResponse;
 import com.ustsinau.transactionapi.entity.*;
@@ -10,7 +9,6 @@ import com.ustsinau.transactionapi.mappers.TransactionalMapper;
 import com.ustsinau.transactionapi.repository.TransactionRepository;
 
 
-import com.ustsinau.transactionapi.utils.UuidFromString;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,8 +25,6 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
 
-
-    private final UuidFromString fromString;
     private final TransactionalMapper transactionalMapper;
 
 
@@ -43,7 +39,7 @@ public class TransactionService {
 
     public TransactionStatusResponse getTransactionStatus(String uid) {
 
-        return toResponseStatus(transactionalMapper.map(transactionRepository.findById(fromString.getUuidFromString(uid))
+        return toResponseStatus(transactionalMapper.map(transactionRepository.findById(UUID.fromString(uid))
                 .orElseThrow(() -> new TransactionNotFoundException("Transaction not found with ID: " + uid, "TRANSACTION_NOT_FOUND"))));
     }
 

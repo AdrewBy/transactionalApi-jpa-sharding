@@ -1,0 +1,93 @@
+
+services:
+
+  db0:
+    image: postgres:latest
+    container_name: db0
+    ports:
+      - 5416:5432
+    environment:
+      POSTGRES_DB: ds0
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - app-network
+
+  db1:
+    image: postgres:latest
+    container_name: db1
+    ports:
+      - 5417:5432
+    environment:
+      POSTGRES_DB: ds1
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - app-network
+
+  db2:
+    image: postgres:latest
+    container_name: db2
+    ports:
+      - 5418:5432
+    environment:
+      POSTGRES_DB: ds2
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - app-network
+
+  db3:
+    image: postgres:latest
+    container_name: db3
+    ports:
+      - 5419:5432
+    environment:
+      POSTGRES_DB: ds3
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - app-network
+
+  shardingsphere-proxy:
+    image: apache/shardingsphere-proxy:latest
+    container_name: shardingsphere-proxy
+    ports:
+      - "3308:3308"
+    environment:
+      JVM_OPTS: -Djava.awt.headless=true
+      PORT: 3308
+    volumes:
+      - ./shardingsphere-proxy/conf:/opt/shardingsphere-proxy/conf
+#      - ./lib:/opt/shardingsphere-proxy/ext-lib
+    depends_on:
+      - db0
+      - db1
+      - db2
+      - db3
+    networks:
+      - app-network
+
+
+  app:
+    image: transaction-api:1.0.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-back
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://shardingsphere-proxy:3308/db0?sslmode=disable
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+    depends_on:
+      - shardingsphere-proxy
+    networks:
+      - app-network
+
+
+networks:
+  app-network:
+    name: app-network
+    driver: bridge

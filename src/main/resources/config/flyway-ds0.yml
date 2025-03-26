@@ -1,7 +1,0 @@
-spring:
-  flyway:
-    url: jdbc:postgresql://db0:5432/transactionalapi
-    user: postgres
-    password: postgres
-    placeholders:
-      shard: 0

@@ -1,7 +1,5 @@
 package com.ustsinau.transactionapi.dto;
 
-
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,26 +11,16 @@ import java.time.LocalDateTime;
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class WalletTypeDto {
+public class TransferDto {
 
     private String uid;
 
     private LocalDateTime createdAt;
 
-    private LocalDateTime modifiedAt;
+    private String systemRate;
 
-    private String name;
+    private PaymentDto paymentRequestFrom;
 
-    private String currencyCode;
-
-    private String status;
-
-    private LocalDateTime archivedAt;
-
-    private String userType;
-
-    private String creator;
-
-    private String modifier;
+    private PaymentDto paymentRequestTo;
 
 }

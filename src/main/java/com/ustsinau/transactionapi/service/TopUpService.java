@@ -13,7 +13,6 @@ import com.ustsinau.transactionapi.exception.WalletNotFoundException;
 import com.ustsinau.transactionapi.mappers.TransactionalMapper;
 import com.ustsinau.transactionapi.repository.TopUpRepository;
 import com.ustsinau.transactionapi.repository.WalletRepository;
-import com.ustsinau.transactionapi.utils.UuidFromString;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -33,13 +33,12 @@ public class TopUpService {
     private final PaymentService paymentService;
     private final TransactionService transactionService;
 
-    private final UuidFromString fromString;
     private final TransactionalMapper transactionalMapper;
 
     @Transactional
     public TransactionResponse createTopUpPayment(TopUpRequestDto request) {
 
-        WalletEntity wallet = walletRepository.findById(fromString.getUuidFromString(request.getWalletUid()))
+        WalletEntity wallet = walletRepository.findById(UUID.fromString(request.getWalletUid()))
                 .orElseThrow(() -> new WalletNotFoundException("Wallet not found with UID: " + request.getWalletUid(), "WALLET_NOT_FOUND"));
 
         PaymentEntity paymentEntity = paymentService.createPaymentRequest(
@@ -57,7 +56,7 @@ public class TopUpService {
                                 .type(TypeTransaction.valueOf(request.getType()))
                                 .state(TransactionState.valueOf(request.getState()))
                                 .amount(request.getAmount())
-                                .userUid(fromString.getUuidFromString(request.getUserUid()))
+                                .userUid(UUID.fromString(request.getUserUid()))
                                 .walletName(wallet.getName())
                                 .wallet(wallet)
                                 .build());

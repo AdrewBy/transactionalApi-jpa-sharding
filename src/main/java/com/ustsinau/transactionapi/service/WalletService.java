@@ -8,7 +8,6 @@ import com.ustsinau.transactionapi.enums.Status;
 import com.ustsinau.transactionapi.entity.WalletEntity;
 import com.ustsinau.transactionapi.entity.WalletTypeEntity;
 import com.ustsinau.transactionapi.exception.WalletNotFoundException;
-import com.ustsinau.transactionapi.exception.UuidInvalidException;
 import com.ustsinau.transactionapi.mappers.WalletMapper;
 import com.ustsinau.transactionapi.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -31,17 +31,10 @@ public class WalletService {
     private final WalletMapper walletMapper;
     private final WalletTypeService walletTypeService;
 
+
     public List<WalletResponse> getUserWallets(String uid) {
 
-        UUID uuid;
-        try {
-            uuid = UUID.fromString(uid);
-            log.info("UUID = " + uuid);
-        } catch (IllegalArgumentException e) {
-            throw new UuidInvalidException("Invalid UUID format: " + uid, "INVALID_UUID_FORMAT");
-        }
-
-        return walletRepository.findByUserUid(uuid)
+        return walletRepository.findByUserUid(UUID.fromString(uid))
                 .stream()
                 .map(walletMapper::map)
                 .map(this::toResponse)
@@ -50,22 +43,14 @@ public class WalletService {
 
     public WalletResponse getWalletByUserIdAndCurrency(String userUid, String currency) {
 
-        UUID uuid;
-        try {
-            uuid = UUID.fromString(userUid);
-            log.info("UUID = " + uuid);
-        } catch (IllegalArgumentException e) {
-            throw new UuidInvalidException("Invalid UUID format: " + userUid, "INVALID_UUID_FORMAT");
-        }
-
-        return toResponse(walletMapper.map(walletRepository.findByUserUidAndCurrency(uuid, currency)));
-
+        return toResponse(walletMapper.map(walletRepository.findByUserUidAndCurrency(UUID.fromString(userUid), currency)));
     }
 
     @Transactional
     public WalletEntity createWallet(WalletCreateRequestDto request) {
 
-        WalletTypeEntity walletType = walletTypeService.createWalletType(request);
+        WalletTypeEntity walletType = walletTypeService.getWalletTypeById(request.getWalletTypeUid());
+        log.info("Creating wallet with request: {}", request);
 
         return walletRepository.save(WalletEntity.builder()
                 .name(request.getName())
@@ -80,16 +65,8 @@ public class WalletService {
     @Transactional
     public WalletDto updateWallet(WalletDto request) {
 
-        UUID uuid;
-        try {
-            uuid = UUID.fromString(request.getUid());
-            log.info("UUID = " + uuid);
-        } catch (IllegalArgumentException e) {
-            throw new UuidInvalidException("Invalid UUID format: " + request.getUid(), "INVALID_UUID_FORMAT");
-        }
-
-        WalletEntity oldWallet = walletRepository.findById(uuid)
-                .orElseThrow(() -> new WalletNotFoundException("Wallet not found with ID: " + uuid, "WALLET_NOT_FOUND"));
+        WalletEntity oldWallet = walletRepository.findById(UUID.fromString(request.getUid()))
+                .orElseThrow(() -> new WalletNotFoundException("Wallet not found with ID: " + request.getUid(), "WALLET_NOT_FOUND"));
 
         WalletEntity originalWalletCopy = new WalletEntity();
         BeanUtils.copyProperties(oldWallet, originalWalletCopy);
@@ -109,11 +86,8 @@ public class WalletService {
 
     @Transactional
     public WalletDto deleteSoftWallet(String id) {
-        try {
 
-            UUID uuid = UUID.fromString(id);
-
-            WalletEntity oldWallet = walletRepository.findById(uuid)
+            WalletEntity oldWallet = walletRepository.findById(UUID.fromString(id))
                     .orElseThrow(() -> new WalletNotFoundException("Wallet not found with ID: " + id, "WALLET_NOT_FOUND"));
 
             WalletEntity originalWalletCopy = new WalletEntity();
@@ -123,10 +97,6 @@ public class WalletService {
 
             return walletMapper.map(walletRepository.save(oldWallet));
 
-        } catch (IllegalArgumentException e) {
-            throw new UuidInvalidException("Invalid UUID format: " + id, "INVALID_UUID_FORMAT");
-        }
-
     }
 
     private WalletResponse toResponse(WalletDto wallet) {
@@ -135,7 +105,7 @@ public class WalletService {
         response.setUid(wallet.getName());
         response.setWalletTypeUid(wallet.getWalletType().getUid());
         response.setUserUid(wallet.getUserUid());
-        response.setStatus(wallet.getStatus().toString());
+        response.setStatus(wallet.getStatus());
         response.setBalance(wallet.getBalance());
         response.setCurrencyCode(wallet.getWalletType().getCurrencyCode());
         response.setCreatedAt(wallet.getCreatedAt());

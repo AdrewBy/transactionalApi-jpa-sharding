@@ -19,7 +19,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Builder(toBuilder = true)
-@Table(schema = "transactional", name = "transactions")
+@Table( name = "transactions")
 public class TransactionalEntity {
 
     @Id

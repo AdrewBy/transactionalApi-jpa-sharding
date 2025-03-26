@@ -19,9 +19,8 @@ public class TopUpRestControllerV1 {
 
     private final TopUpService topUpService;
 
-
     @PostMapping
-    public ResponseEntity<TransactionResponse> createPaymentRequest(@RequestBody TopUpRequestDto request) {
+    public ResponseEntity<TransactionResponse> createTopUpRequest(@RequestBody TopUpRequestDto request) {
         TransactionResponse response = topUpService.createTopUpPayment(request);
         return ResponseEntity.ok(response);
     }

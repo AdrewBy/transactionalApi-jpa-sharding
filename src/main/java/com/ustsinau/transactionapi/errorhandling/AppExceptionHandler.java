@@ -37,11 +37,6 @@ public class AppExceptionHandler {
 
     }
 
-    @ExceptionHandler(UuidInvalidException.class)
-    public ResponseEntity<Object> handleUuidInvalidException(UuidInvalidException ex) {
-        return buildErrorResponse(ex, HttpStatus.BAD_REQUEST);
-
-    }
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<Object> handleApiException(ApiException ex) {
         return buildErrorResponse(ex, HttpStatus.BAD_REQUEST);

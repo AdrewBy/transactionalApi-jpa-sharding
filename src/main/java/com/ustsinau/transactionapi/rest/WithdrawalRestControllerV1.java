@@ -24,7 +24,7 @@ public class WithdrawalRestControllerV1 {
 
 
     @PostMapping
-    public ResponseEntity<TransactionResponse> createPaymentRequest(@RequestBody WithdrawalRequestDto request) {
+    public ResponseEntity<TransactionResponse> createWithdrawRequest(@RequestBody WithdrawalRequestDto request) {
         TransactionResponse response = withdrawalService.createWithdrawalPayment(request);
         return ResponseEntity.ok(response);
     }

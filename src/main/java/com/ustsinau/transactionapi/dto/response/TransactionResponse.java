@@ -2,14 +2,13 @@ package com.ustsinau.transactionapi.dto.response;
 
 
 import com.ustsinau.transactionapi.dto.TransactionalDto;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@Builder
+@Builder(toBuilder = true)
 public class TransactionResponse {
     private String uid;
     private String userUid;

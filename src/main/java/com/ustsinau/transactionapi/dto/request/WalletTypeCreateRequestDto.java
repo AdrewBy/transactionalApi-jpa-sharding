@@ -5,19 +5,18 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
 
 @Data
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class WalletCreateRequestDto {
-
+public class WalletTypeCreateRequestDto {
 
     private String name;
 
-    private UUID userUid;
+    private String creator;
 
-    private String walletTypeUid;
+    private String userType;
 
+    private String currencyCode;
 }
