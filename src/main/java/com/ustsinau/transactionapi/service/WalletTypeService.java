@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -23,7 +25,7 @@ public class WalletTypeService {
 
     private final WalletTypeRepository walletTypeRepository;
 
-
+    @Transactional(propagation = Propagation.REQUIRED)
     public WalletTypeEntity createWalletType(WalletTypeCreateRequestDto request) {
 
         WalletTypeEntity walletType = WalletTypeEntity.builder()
@@ -40,7 +42,7 @@ public class WalletTypeService {
 
     public WalletTypeEntity getWalletTypeById(String uid) {
 
-        return  walletTypeRepository.findById(UUID.fromString(uid))
+        return walletTypeRepository.findById(UUID.fromString(uid))
                 .map(walletType -> {
                     log.info("Found wallet type: {}", walletType);
                     return walletType;
@@ -48,6 +50,7 @@ public class WalletTypeService {
                 .orElseThrow(() -> new WalletNotFoundException("WalletType not found with ID: " + uid, "WALLET_NOT_FOUND"));
     }
 
+    @Transactional
     public WalletTypeEntity updateWalletType(WalletTypeDto request) {
 
         WalletTypeEntity oldWalletType = walletTypeRepository.findById(UUID.fromString(request.getUid()))

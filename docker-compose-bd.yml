@@ -1,0 +1,68 @@
+services:
+
+  db0:
+    image: postgres:latest
+    container_name: db0
+    ports:
+      - 5416:5432
+    environment:
+      POSTGRES_DB: ds0
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db0_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  db1:
+    image: postgres:latest
+    container_name: db1
+    ports:
+      - 5417:5432
+    environment:
+      POSTGRES_DB: ds1
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db1_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  db2:
+    image: postgres:latest
+    container_name: db2
+    ports:
+      - 5418:5432
+    environment:
+      POSTGRES_DB: ds2
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db2_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  db3:
+    image: postgres:latest
+    container_name: db3
+    ports:
+      - 5419:5432
+    environment:
+      POSTGRES_DB: ds3
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db3_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+volumes:
+  db0_data:
+  db1_data:
+  db2_data:
+  db3_data:
+
+networks:
+  app-network:
+    name: app-network
+    driver: bridge

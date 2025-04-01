@@ -4,7 +4,7 @@ server:
 spring:
   datasource:
     driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
-    url: jdbc:shardingsphere:classpath:sharding.yaml?allowLoadLocalInfile=true
+    url: jdbc:shardingsphere:classpath:sharding.yaml
     hikari:
       connection-timeout: 30000
       initialization-fail-timeout: 60000
@@ -12,33 +12,29 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: false
+    show-sql: true
     properties:
       hibernate.transaction.jta.platform: org.hibernate.engine.transaction.jta.platform.internal.JBossStandAloneJtaPlatform
       hibernate.transaction.coordinator_class: jta
       hibernate.format_sql: true
 
+
   flyway:
     enabled: false
-
-#  autoconfigure:
-#    exclude:
-#      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
-#      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
 
 
 flyway:
   dataSources:
-    - url: jdbc:postgresql://localhost:5432/ds0
+    - url: jdbc:postgresql://db0:5416/ds0
       username: postgres
       password: postgres
-    - url: jdbc:postgresql://localhost:5432/ds1
+    - url: jdbc:postgresql://db1:5417/ds1
       username: postgres
       password: postgres
-    - url: jdbc:postgresql://localhost:5432/ds2
+    - url: jdbc:postgresql://db2:5418/ds2
       username: postgres
       password: postgres
-    - url: jdbc:postgresql://localhost:5432/ds3
+    - url: jdbc:postgresql://db3:5419/ds3
       username: postgres
       password: postgres
 
@@ -46,7 +42,8 @@ logging:
   level:
     org.apache.shardingsphere.sql: TRACE
     org.apache.shardingsphere: TRACE
-    com.arjuna: DEBUG
+    com.arjuna.ats: DEBUG
+    org.apache.shardingsphere.transaction: DEBUG
     com.ustsinau: TRACE
     org.springframework.web: DEBUG
     org.springframework.security: DEBUG

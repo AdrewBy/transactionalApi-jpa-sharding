@@ -37,6 +37,7 @@ public class WalletEntity {
     @JoinColumn(name = "wallet_type_uid", nullable = false, foreignKey = @ForeignKey(name = "fk_wallets_wallet_types"))
     private WalletTypeEntity walletType;
 
+//    @Column(nullable = false, updatable = false)
     @Column(nullable = false)
     private UUID userUid;
 

@@ -12,25 +12,25 @@ dataSources:
   ds0:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://localhost:5432/ds0
+    jdbcUrl: jdbc:postgresql://db0:5416/ds0
     username: postgres
     password: postgres
   ds1:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://localhost:5432/ds1
+    jdbcUrl: jdbc:postgresql://db1:5417/ds1
     username: postgres
     password: postgres
   ds2:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://localhost:5432/ds2
+    jdbcUrl: jdbc:postgresql://db2:5418/ds2
     username: postgres
     password: postgres
   ds3:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://localhost:5432/ds3
+    jdbcUrl: jdbc:postgresql://db3:5419/ds3
     username: postgres
     password: postgres
 
@@ -41,84 +41,81 @@ rules:
     providerType: Narayana
 
   - !AUTHORITY
-        users:
-          - user: postgres
-            password: postgres
-        privilege:
-          type: ALL_PERMITTED
+    users:
+      - user: postgres
+        password: postgres
+    privilege:
+      type: ALL_PERMITTED
 
-#  - !BROADCAST
-#    tables: # Broadcast tables
-#      - wallet_types
+  - !BROADCAST
+    tables: # Broadcast tables
+      - wallet_types
 
   - !SHARDING
     tables:
-      wallet_types:
-        actualDataNodes: ds${0..3}.wallet_types
-        tableStrategy:
-          standard:
-            shardingColumn: uid
-            shardingAlgorithmName: wallet-hash-mod
-
 
       wallets:
         actualDataNodes: ds${0..3}.wallets
-        tableStrategy:
+        databaseStrategy:
           standard:
-            shardingColumn: uid
-            shardingAlgorithmName: wallet-hash-mod
-
-      payment_requests:
-        actualDataNodes: ds${0..3}.payment_requests
-        tableStrategy:
-          standard:
-            shardingColumn: wallet_uid
+            shardingColumn: user_uid
             shardingAlgorithmName: wallet-hash-mod
 
       transactions:
         actualDataNodes: ds${0..3}.transactions
-        tableStrategy:
+        databaseStrategy:
           standard:
-            shardingColumn: wallet_uid
+            shardingColumn: user_uid
+            shardingAlgorithmName: wallet-hash-mod
+
+      payment_requests:
+        actualDataNodes: ds${0..3}.payment_requests
+        databaseStrategy:
+          standard:
+            shardingColumn: user_uid
             shardingAlgorithmName: wallet-hash-mod
 
       top_up_requests:
         actualDataNodes: ds${0..3}.top_up_requests
-        tableStrategy:
-          standard:
-            shardingColumn: payment_request_uid
+        databaseStrategy:
+          hint:
             shardingAlgorithmName: payment-hash-mod
+
+#      top_up_requests:
+#        actualDataNodes: ds${0..3}.top_up_requests
+#        databaseStrategy:
+#          standard:
+#            shardingColumn: payment_request_uid
+#            shardingAlgorithmName: wallet-hash-mod
 
       withdrawal_requests:
         actualDataNodes: ds${0..3}.withdrawal_requests
-        tableStrategy:
-          standard:
-            shardingColumn: payment_request_uid
+        databaseStrategy:
+          hint:
             shardingAlgorithmName: payment-hash-mod
 
       transfer_requests:
         actualDataNodes: ds${0..3}.transfer_requests
-        tableStrategy:
-          standard:
-            shardingColumn: payment_request_uid
+        databaseStrategy:
+          hint:
             shardingAlgorithmName: payment-hash-mod
 
-    bindingTables:
-      - payment_requests, transactions
+#    bindingTables:
+#      - wallets, payment_requests, transactions
 
     shardingAlgorithms:
+
       wallet-hash-mod:
         type: CLASS_BASED
         props:
-          sql-show: true
           strategy: STANDARD
-#          algorithmClassName: ds${(uid.hashCode() % 2 + 2) % 2}
           algorithmClassName: com.ustsinau.transactionapi.shardingAlgorithm.UUIDHashModShardingAlgorithm
 
       payment-hash-mod:
         type: CLASS_BASED
         props:
-          strategy: STANDARD
-          algorithmClassName: com.ustsinau.transactionapi.shardingAlgorithm.UUIDHashModShardingAlgorithm
+          strategy: HINT
+          algorithmClassName: com.ustsinau.transactionapi.shardingAlgorithm.MyHintShardingAlgorithm
 
-
+props:
+  sql-show: false

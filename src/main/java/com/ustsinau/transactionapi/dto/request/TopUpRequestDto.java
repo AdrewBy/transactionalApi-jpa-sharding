@@ -19,8 +19,6 @@ public class TopUpRequestDto {
 
     private String walletUid;
 
-    private String walletName;
-
     private BigDecimal amount;
 
     private String type;
@@ -31,7 +29,6 @@ public class TopUpRequestDto {
     private String comment;
 
     private Long paymentMethodId;
-
 
 
     private String provider;

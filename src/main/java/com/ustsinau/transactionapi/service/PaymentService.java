@@ -9,6 +9,7 @@ import com.ustsinau.transactionapi.repository.PaymentRequestRepository;
 import com.ustsinau.transactionapi.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shardingsphere.infra.hint.HintManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,8 +46,9 @@ public class PaymentService {
         paymentEntity.setPaymentMethodId(paymentMethodId);
         paymentEntity.setCreatedAt(LocalDateTime.now());
 
-
-        return paymentRequestRepository.save(paymentEntity);
-
+        try (HintManager hintManager = HintManager.getInstance()) {
+            hintManager.addDatabaseShardingValue("payment_requests", userUid);
+            return paymentRequestRepository.save(paymentEntity);
+        }
     }
 }

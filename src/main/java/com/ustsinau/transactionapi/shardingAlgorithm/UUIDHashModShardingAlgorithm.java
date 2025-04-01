@@ -1,40 +1,57 @@
 package com.ustsinau.transactionapi.shardingAlgorithm;
 
+import com.ustsinau.transactionapi.exception.WalletNotFoundException;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shardingsphere.infra.hint.HintManager;
 import org.apache.shardingsphere.sharding.api.sharding.standard.RangeShardingValue;
 
 import org.apache.shardingsphere.sharding.api.sharding.standard.PreciseShardingValue;
 import org.apache.shardingsphere.sharding.api.sharding.standard.StandardShardingAlgorithm;
+import org.springframework.context.annotation.Configuration;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.UUID;
+import java.util.*;
 
 
 @Slf4j
+@Configuration
 public class UUIDHashModShardingAlgorithm implements StandardShardingAlgorithm<UUID> {
 
-    @Override
-    public String doSharding(Collection<String> availableTargetNames, PreciseShardingValue<UUID> shardingValue) {
-        log.info("Available shards: {}", availableTargetNames);
-        log.info("Sharding column: {}, value: {}", shardingValue.getColumnName(), shardingValue.getValue());
-
-        // Ваш текущий алгоритм шардирования
-        String shard = calculateShard(availableTargetNames, shardingValue.getValue());
-
-        log.info("Selected shard: {}", shard);
-        return shard;
-    }
-
-    private String calculateShard(Collection<String> availableTargetNames, UUID value) {
-        int hash = Math.abs(value.hashCode()); // Хешируем UUID
-        int shardIndex = hash % availableTargetNames.size(); // Определяем индекс шарда
-        return new ArrayList<>(availableTargetNames).get(shardIndex); // Берём нужный шард
-    }
+    @Getter
+    private Properties props = new Properties();
+    private List<String> availableShards = List.of("ds0", "ds1", "ds2", "ds3");
 
     @Override
-    public Collection<String> doSharding(Collection<String> availableTargetNames, RangeShardingValue<UUID> shardingValue) {
+    public String doSharding(Collection<String> availableTargetNames,
+                             PreciseShardingValue<UUID> shardingValue) {
+
+        log.info("shardingValue: {}", shardingValue);
+
+        UUID value = shardingValue.getValue();
+        int shardIndex = Math.abs(value.hashCode()) % availableTargetNames.size();
+        String selectedShard = new ArrayList<>(availableTargetNames).get(shardIndex);
+        log.info("Standard routing to shard: {}", selectedShard);
+        return selectedShard;
+
+    }
+
+    @Override
+    public void init(Properties properties) {
+        this.props = properties;
+        if (properties.containsKey("shards")) {
+            availableShards = Arrays.asList(properties.getProperty("shards").split(","));
+        }
+        log.info("Initialized with shards: {}", availableShards);
+    }
+
+    @Override
+    public String getType() {
+        return "CLASS_BASED";
+    }
+
+    @Override
+    public Collection<String> doSharding(Collection<String> availableTargetNames,
+                                         RangeShardingValue<UUID> shardingValue) {
         throw new UnsupportedOperationException("Range sharding is not supported for UUID hashing");
     }
-
 }
