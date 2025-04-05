@@ -1,110 +1,26 @@
-#mode:
-#  type: Standalone
-#  repository:
-#    type: File
 
-#props:
-#  proxy-frontend-database-protocol-type: PostgreSQL
-#  proxy-backend-query-with-meta-data: true
-#  sql-show: true
+authority:
+    users:
+      - user: root
+        password: root
+    privilege:
+      type: ALL_PERMITTED
 
-dataSources:
-  ds0:
-    driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://db0:5416/ds0?sslmode=disable
-    username: postgres
-    password: postgres
-  ds1:
-    driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://db1:5417/ds1?sslmode=disable
-    username: postgres
-    password: postgres
-  ds2:
-    driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://db2:5418/ds2?sslmode=disable
-    username: postgres
-    password: postgres
-  ds3:
-    driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://db3:5419/ds3?sslmode=disable
-    username: postgres
-    password: postgres
+transaction:
+#    defaultType: LOCAL
+    defaultType: XA
+    providerType: Narayana
 
 
-rules:
-#  - !AUTHORITY
-#      users:
-#        - user: postgres
-#          password: postgres
-#      privilege:
-#        type: ALL_PERMITTED
-
-  - !SHARDING
-    tables:
-      wallets:
-        actualDataNodes: ds$->{0..3}.wallets_$->{0..3}
-        tableStrategy:
-          standard:
-            shardingColumn: uid
-            shardingAlgorithmName: wallet-hash-mod
-        keyGenerateStrategy:
-          column: uid
-          keyGeneratorName: uuid
-      payment_requests:
-        actualDataNodes: ds$->{0..3}.payment_requests_$->{0..3}
-        tableStrategy:
-          standard:
-            shardingColumn: wallet_uid
-            shardingAlgorithmName: wallet-hash-mod
-        keyGenerateStrategy:
-          column: uid
-          keyGeneratorName: uuid
-      transactions:
-        actualDataNodes: ds$->{0..3}.transactions_$->{0..3}
-        tableStrategy:
-          standard:
-            shardingColumn: wallet_uid
-            shardingAlgorithmName: wallet-hash-mod
-        keyGenerateStrategy:
-          column: uid
-          keyGeneratorName: uuid
-      top_up_requests:
-        actualDataNodes: ds$->{0..3}.top_up_requests_$->{0..3}
-        tableStrategy:
-          standard:
-            shardingColumn: payment_request_uid
-            shardingAlgorithmName: payment-hash-mod
-        keyGenerateStrategy:
-          column: uid
-          keyGeneratorName: uuid
-      withdrawal_requests:
-        actualDataNodes: ds$->{0..3}.withdrawal_requests_$->{0..3}
-        tableStrategy:
-          standard:
-            shardingColumn: payment_request_uid
-            shardingAlgorithmName: payment-hash-mod
-        keyGenerateStrategy:
-          column: uid
-          keyGeneratorName: uuid
-      transfer_requests:
-        actualDataNodes: ds$->{0..3}.transfer_requests_$->{0..3}
-        tableStrategy:
-          standard:
-            shardingColumn: payment_request_uid
-            shardingAlgorithmName: payment-hash-mod
-        keyGenerateStrategy:
-          column: uid
-          keyGeneratorName: uuid
-    shardingAlgorithms:
-      wallet-hash-mod:
-        type: HASH_MOD
-        props:
-          sharding-count: 4
-      payment-hash-mod:
-        type: HASH_MOD
-        props:
-          sharding-count: 4
-    keyGenerators:
-      uuid:
-        type: UUID
-
+props:
+  sql-show: true  # Рекомендуется true для отладки
+  sql-simple: false
+  kernel-executor-size: 20  # Оптимально для production
+  max-connections-size-per-query: 5
+  check-table-metadata-enabled: false
+  proxy-frontend-executor-size: 16  # Для лучшей производительности
+  proxy-frontend-flush-threshold: 128
+  proxy-hint-enabled: true  # Обязательно для hint-шардинга
+  proxy-backend-query-fetch-size: -1
+  proxy-default-port: 3307
+  proxy-netty-backlog: 1024

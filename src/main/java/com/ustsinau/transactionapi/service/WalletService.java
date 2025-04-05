@@ -12,9 +12,11 @@ import com.ustsinau.transactionapi.mappers.WalletMapper;
 import com.ustsinau.transactionapi.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shardingsphere.infra.hint.HintManager;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -30,6 +32,8 @@ public class WalletService {
     private final WalletRepository walletRepository;
     private final WalletMapper walletMapper;
     private final WalletTypeService walletTypeService;
+
+    private final TransactionTemplate transactionTemplate;
 
 
     public List<WalletResponse> getUserWallets(String uid) {
@@ -48,7 +52,6 @@ public class WalletService {
 
     @Transactional
     public WalletEntity createWallet(WalletCreateRequestDto request) {
-
         WalletTypeEntity walletType = walletTypeService.getWalletTypeById(request.getWalletTypeUid());
         log.info("Creating wallet with request: {}", request);
 
@@ -62,55 +65,56 @@ public class WalletService {
                 .build());
     }
 
-    @Transactional
-    public WalletDto updateWallet(WalletDto request) {
 
-        WalletEntity oldWallet = walletRepository.findById(UUID.fromString(request.getUid()))
-                .orElseThrow(() -> new WalletNotFoundException("Wallet not found with ID: " + request.getUid(), "WALLET_NOT_FOUND"));
 
-        WalletEntity originalWalletCopy = new WalletEntity();
-        BeanUtils.copyProperties(oldWallet, originalWalletCopy);
+public WalletDto updateWallet(WalletDto request) {
 
-        if (request.getName() != null) {
-            oldWallet.setName(request.getName());
-        }
-        if (request.getStatus() != null) {
-            oldWallet.setStatus(Status.valueOf(request.getStatus()));
-        }
+    WalletEntity oldWallet = walletRepository.findById(UUID.fromString(request.getUid()))
+            .orElseThrow(() -> new WalletNotFoundException("Wallet not found with ID: " + request.getUid(), "WALLET_NOT_FOUND"));
 
-        oldWallet.setModifiedAt(LocalDateTime.now());
+    WalletEntity originalWalletCopy = new WalletEntity();
+    BeanUtils.copyProperties(oldWallet, originalWalletCopy);
 
-        return walletMapper.map(walletRepository.save(oldWallet));
-
+    if (request.getName() != null) {
+        oldWallet.setName(request.getName());
+    }
+    if (request.getStatus() != null) {
+        oldWallet.setStatus(Status.valueOf(request.getStatus()));
     }
 
-    @Transactional
-    public WalletDto deleteSoftWallet(String id) {
+    oldWallet.setModifiedAt(LocalDateTime.now());
 
-            WalletEntity oldWallet = walletRepository.findById(UUID.fromString(id))
-                    .orElseThrow(() -> new WalletNotFoundException("Wallet not found with ID: " + id, "WALLET_NOT_FOUND"));
+    return walletMapper.map(walletRepository.save(oldWallet));
 
-            WalletEntity originalWalletCopy = new WalletEntity();
-            BeanUtils.copyProperties(oldWallet, originalWalletCopy);
+}
 
-            oldWallet.setStatus(Status.DELETED);
 
-            return walletMapper.map(walletRepository.save(oldWallet));
+public WalletDto deleteSoftWallet(String id) {
 
-    }
+    WalletEntity oldWallet = walletRepository.findById(UUID.fromString(id))
+            .orElseThrow(() -> new WalletNotFoundException("Wallet not found with ID: " + id, "WALLET_NOT_FOUND"));
 
-    private WalletResponse toResponse(WalletDto wallet) {
-        WalletResponse response = new WalletResponse();
-        response.setUid(wallet.getUid());
-        response.setUid(wallet.getName());
-        response.setWalletTypeUid(wallet.getWalletType().getUid());
-        response.setUserUid(wallet.getUserUid());
-        response.setStatus(wallet.getStatus());
-        response.setBalance(wallet.getBalance());
-        response.setCurrencyCode(wallet.getWalletType().getCurrencyCode());
-        response.setCreatedAt(wallet.getCreatedAt());
-        return response;
-    }
+    WalletEntity originalWalletCopy = new WalletEntity();
+    BeanUtils.copyProperties(oldWallet, originalWalletCopy);
+
+    oldWallet.setStatus(Status.DELETED);
+
+    return walletMapper.map(walletRepository.save(oldWallet));
+
+}
+
+private WalletResponse toResponse(WalletDto wallet) {
+    WalletResponse response = new WalletResponse();
+    response.setUid(wallet.getUid());
+    response.setName(wallet.getName());
+    response.setWalletTypeUid(wallet.getWalletType().getUid());
+    response.setUserUid(wallet.getUserUid());
+    response.setStatus(wallet.getStatus());
+    response.setBalance(wallet.getBalance());
+    response.setCurrencyCode(wallet.getWalletType().getCurrencyCode());
+    response.setCreatedAt(wallet.getCreatedAt());
+    return response;
+}
 
 
 }

@@ -20,8 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.Collection;
 import java.util.UUID;
 
 @Slf4j
@@ -37,59 +37,54 @@ public class TopUpService {
 
     private final TransactionalMapper transactionalMapper;
 
-
     @Transactional
     public TransactionResponse createTopUpPayment(TopUpRequestDto request) {
 
-            WalletEntity wallet = walletRepository.findById(UUID.fromString(request.getWalletUid()))
-                    .orElseThrow(() -> new WalletNotFoundException("Wallet not found with UID: " + request.getWalletUid(), "WALLET_NOT_FOUND"));
-            log.info("Using wallet for sharding: {}", wallet);
+        WalletEntity wallet = walletRepository.findById(UUID.fromString(request.getWalletUid()))
+                .orElseThrow(() -> new WalletNotFoundException("Wallet not found with UID: " + request.getWalletUid(), "WALLET_NOT_FOUND"));
 
-            PaymentEntity paymentEntity = paymentService.createPaymentRequest(
-                    request.getUserUid(),
-                    request.getWalletUid(),
-                    request.getAmount(),
-                    request.getComment(),
-                    request.getPaymentMethodId()
-            );
+        PaymentEntity paymentEntity = paymentService.createPaymentRequest(
+                request.getUserUid(),
+                request.getWalletUid(),
+                request.getAmount(),
+                request.getComment(),
+                request.getPaymentMethodId()
+        );
 
-            UUID paymentRequestUuid = paymentEntity.getUid();
+        TransactionalEntity transactionalEntity = transactionService
+                .createTransaction(TransactionalEntity
+                        .builder()
+                        .createdAt(LocalDateTime.now())
+                        .paymentRequest(paymentEntity)
+                        .type(TypeTransaction.valueOf(request.getType()))
+                        .state(TransactionState.valueOf(request.getState()))
+                        .amount(request.getAmount())
+                        .userUid(UUID.fromString(request.getUserUid()))
+                        .walletName(wallet.getName())
+                        .wallet(wallet)
+                        .build());
 
-            log.info("DEBUG: Using paymentRequestUid for sharding: " + paymentRequestUuid);
-
-            TransactionalEntity transactionalEntity = transactionService
-                    .createTransaction(TransactionalEntity
-                            .builder()
-                            .createdAt(LocalDateTime.now())
-                            .paymentRequest(paymentEntity)
-                            .type(TypeTransaction.valueOf(request.getType()))
-                            .state(TransactionState.valueOf(request.getState()))
-                            .amount(request.getAmount())
-                            .userUid(UUID.fromString(request.getUserUid()))
-                            .walletName(wallet.getName())
-                            .wallet(wallet)
-                            .build());
-
-            TopUpEntity topUp = TopUpEntity.builder()
-                    .provider(request.getProvider())
-                    .createdAt(LocalDateTime.now())
-                    .paymentRequest(paymentEntity)
-                    .build();
+        TopUpEntity topUp = TopUpEntity.builder()
+//                .provider(request.getProvider())
+                .provider(null)
+                .createdAt(LocalDateTime.now())
+                .paymentRequest(paymentEntity)
+                .build();
 
         try (HintManager hintManager = HintManager.getInstance()) {
-
-            hintManager.addDatabaseShardingValue("top_up_requests", paymentEntity.getUserUid());
-
-            Collection<Comparable<?>> activeHints = HintManager.getDatabaseShardingValues("top_up_requests");
-            log.info("ACTIVE HINTS AFTER SET: {}", activeHints);
-
+//            HintManager.clear();
+            hintManager.addDatabaseShardingValue("top_up_requests", request.getUserUid());
             topUpRepository.save(topUp);
-            // Обновляем баланс кошелька
+
             wallet.setBalance(wallet.getBalance().add(request.getAmount()));
             walletRepository.updateBalance(wallet.getUid(), wallet.getBalance());
 
             return TransactionResponse.toResponse(transactionalMapper.map(transactionalEntity));
+        } catch (Exception e) {
+            // Любая другая ошибка (например, NullPointerException, IllegalArgumentException)
+            throw new NullPointerException();
         }
+
+
     }
 }
-

@@ -67,14 +67,13 @@ services:
       PORT: 3308
     volumes:
       - ./shardingsphere-proxy/conf:/opt/shardingsphere-proxy/conf
-#      - ./lib:/opt/shardingsphere-proxy/ext-lib
-#    depends_on:
-#      - db0
-#      - db1
-#      - db2
-#      - db3
-#    networks:
-#      - app-network
+    depends_on:
+      - db0
+      - db1
+      - db2
+      - db3
+    networks:
+      - app-network
 #
 #
 #  app:

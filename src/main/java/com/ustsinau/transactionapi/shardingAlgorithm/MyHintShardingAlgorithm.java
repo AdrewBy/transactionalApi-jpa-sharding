@@ -1,5 +1,6 @@
 package com.ustsinau.transactionapi.shardingAlgorithm;
 
+
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shardingsphere.sharding.api.sharding.hint.HintShardingAlgorithm;
@@ -8,15 +9,15 @@ import org.apache.shardingsphere.sharding.api.sharding.hint.HintShardingValue;
 import java.util.*;
 
 @Slf4j
-@Getter
-public class MyHintShardingAlgorithm implements HintShardingAlgorithm<UUID> {
+public class MyHintShardingAlgorithm implements HintShardingAlgorithm<String> {
 
+    @Getter
     private Properties props;
     private List<String> availableShards = List.of("ds0", "ds1", "ds2", "ds3");
 
     @Override
     public Collection<String> doSharding(Collection<String> availableTargetNames,
-                                         HintShardingValue<UUID> shardingValue) {
+                                         HintShardingValue<String> shardingValue) {
         log.info("Sharding called for table: {}", shardingValue.getLogicTableName());
         log.info("Received hint values: {}", shardingValue.getValues());
 
@@ -24,7 +25,7 @@ public class MyHintShardingAlgorithm implements HintShardingAlgorithm<UUID> {
             throw new IllegalStateException("No sharding hint provided");
         }
 
-        UUID paymentUid = shardingValue.getValues().iterator().next();
+        UUID paymentUid = UUID.fromString(shardingValue.getValues().iterator().next());
         int shardIndex = Math.abs(paymentUid.hashCode()) % availableTargetNames.size();
         String selectedShard = new ArrayList<>(availableTargetNames).get(shardIndex);
 

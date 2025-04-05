@@ -1,20 +1,16 @@
 package com.ustsinau.transactionapi.shardingAlgorithm;
 
-import com.ustsinau.transactionapi.exception.WalletNotFoundException;
+
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.shardingsphere.infra.hint.HintManager;
 import org.apache.shardingsphere.sharding.api.sharding.standard.RangeShardingValue;
 
 import org.apache.shardingsphere.sharding.api.sharding.standard.PreciseShardingValue;
 import org.apache.shardingsphere.sharding.api.sharding.standard.StandardShardingAlgorithm;
-import org.springframework.context.annotation.Configuration;
 
 import java.util.*;
 
-
 @Slf4j
-@Configuration
 public class UUIDHashModShardingAlgorithm implements StandardShardingAlgorithm<UUID> {
 
     @Getter

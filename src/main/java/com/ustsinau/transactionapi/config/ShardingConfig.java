@@ -1,8 +1,7 @@
 package com.ustsinau.transactionapi.config;
 
 import org.apache.shardingsphere.driver.api.yaml.YamlShardingSphereDataSourceFactory;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.*;
 import org.springframework.core.io.ClassPathResource;
 
 import javax.sql.DataSource;
@@ -12,6 +11,7 @@ import java.sql.SQLException;
 
 
 @Configuration
+@Profile("local")
 public class ShardingConfig {
 
     @Bean
