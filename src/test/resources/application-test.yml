@@ -1,0 +1,35 @@
+
+spring:
+  datasource:
+    driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
+    url: jdbc:shardingsphere:classpath:config-sharding-rules.yaml
+    hikari:
+      connection-timeout: 30000
+      initialization-fail-timeout: 60000
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate.transaction.jta.platform: org.hibernate.engine.transaction.jta.platform.internal.JBossStandAloneJtaPlatform
+      hibernate.transaction.coordinator_class: jta
+      hibernate.format_sql: true
+
+  flyway:
+    enabled: false
+
+flyway:
+  dataSources:
+    - url: jdbc:postgresql://localhost:${db0.port}/ds0
+      username: postgres
+      password: postgres
+    - url: jdbc:postgresql://localhost:${db1.port}/ds1
+      username: postgres
+      password: postgres
+    - url: jdbc:postgresql://localhost:${db2.port}/ds2
+      username: postgres
+      password: postgres
+    - url: jdbc:postgresql://localhost:${db3.port}/ds3
+      username: postgres
+      password: postgres

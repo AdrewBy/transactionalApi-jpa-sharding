@@ -32,13 +32,7 @@ public class TransferRequestDto {
     private Long PaymentMethodId;
 
 
-
-
     private String systemRate;
-
-    private String paymentRequestTo;
-
-    private String paymentRequestFrom;
 
 
 }

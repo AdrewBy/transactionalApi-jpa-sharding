@@ -1,42 +1,9 @@
 
-dataSources:
-  ds0:
-    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-    driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://db0:5416/ds0
-    username: postgres
-    password: postgres
-  ds1:
-    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-    driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://db1:5417/ds1
-    username: postgres
-    password: postgres
-  ds2:
-    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-    driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://db2:5418/ds2
-    username: postgres
-    password: postgres
-  ds3:
-    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-    driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://db3:5419/ds3
-    username: postgres
-    password: postgres
-
-
 rules:
+
   - !TRANSACTION
     defaultType: XA
     providerType: Narayana
-
-#  - !AUTHORITY
-#    users:
-#      - user: root
-#        password: root
-#    privilege:
-#      type: ALL_PERMITTED
 
   - !BROADCAST
     tables:
@@ -83,9 +50,6 @@ rules:
         databaseStrategy:
           hint:
             shardingAlgorithmName: payment-hash-mod
-
-#    bindingTables:
-#      - wallets, payment_requests, transactions
 
     shardingAlgorithms:
 

@@ -64,16 +64,19 @@ public class TopUpService {
                         .wallet(wallet)
                         .build());
 
-        TopUpEntity topUp = TopUpEntity.builder()
-//                .provider(request.getProvider())
-                .provider(null)
-                .createdAt(LocalDateTime.now())
-                .paymentRequest(paymentEntity)
-                .build();
+
 
         try (HintManager hintManager = HintManager.getInstance()) {
 //            HintManager.clear();
             hintManager.addDatabaseShardingValue("top_up_requests", request.getUserUid());
+
+            TopUpEntity topUp = TopUpEntity.builder()
+                .provider(request.getProvider())
+//                    .provider(null)
+                    .createdAt(LocalDateTime.now())
+                    .paymentRequest(paymentEntity)
+                    .build();
+            
             topUpRepository.save(topUp);
 
             wallet.setBalance(wallet.getBalance().add(request.getAmount()));

@@ -1,0 +1,10 @@
+{
+  "userUid": "123e4567-e89b-12d3-a456-426614174000",
+  "walletUid": "e11e7279-18a9-4883-9e21-85b8bbc26f5f",
+  "amount": "10",
+  "type": "TOPUP",
+  "state": "PENDING",
+  "comment": "top up",
+  "paymentMethodId": "1",
+  "provider": "LOCAL"
+}

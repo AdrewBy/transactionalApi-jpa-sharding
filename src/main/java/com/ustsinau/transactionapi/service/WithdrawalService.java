@@ -16,6 +16,7 @@ import com.ustsinau.transactionapi.repository.WalletRepository;
 import com.ustsinau.transactionapi.repository.WithdrawRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shardingsphere.infra.hint.HintManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,6 +60,7 @@ public class WithdrawalService {
         TransactionalEntity transactionalEntity = transactionService
                 .createTransaction(TransactionalEntity
                         .builder()
+                        .createdAt(LocalDateTime.now())
                         .paymentRequest(paymentEntity)
                         .type(TypeTransaction.valueOf(request.getType()))
                         .state(TransactionState.valueOf(request.getState()))
@@ -68,17 +70,33 @@ public class WithdrawalService {
                         .wallet(wallet)
                         .build());
 
-        withdrawRepository.save(WithdrawalEntity
-                .builder()
-                .createdAt(LocalDateTime.now())
-                .paymentRequest(paymentEntity)
-                .build());
+        try (HintManager hintManager = HintManager.getInstance()) {
+//            HintManager.clear();
+            hintManager.addDatabaseShardingValue("withdrawal_requests", request.getUserUid());
 
-        // Снимаем сумму с баланса кошелька
-        BigDecimal newBalance = currentBalance.subtract(request.getAmount());
-        wallet.setBalance(newBalance);
-        walletRepository.save(wallet);
+            withdrawRepository.save(WithdrawalEntity
+                    .builder()
+                    .createdAt(LocalDateTime.now())
+                    .paymentRequest(paymentEntity)
+                    .build());
 
-        return TransactionResponse.toResponse(transactionalMapper.map(transactionalEntity));
+            // Снимаем сумму с баланса кошелька
+            log.info("Current balance: " + currentBalance);
+            BigDecimal newBalance = currentBalance.subtract(request.getAmount());
+            wallet.setBalance(newBalance);
+            walletRepository.updateBalance(wallet.getUid(), wallet.getBalance());
+//            walletRepository.save(wallet);
+            log.info("newBalance balance: " + newBalance);
+            return TransactionResponse.toResponse(transactionalMapper.map(transactionalEntity));
+
+
+        } catch (Exception e) {
+
+            log.error("Withdrawal failed for request: {}", request, e);
+            // Пробрасываем оригинальное исключение
+            throw e;
+        }
+
     }
+
 }

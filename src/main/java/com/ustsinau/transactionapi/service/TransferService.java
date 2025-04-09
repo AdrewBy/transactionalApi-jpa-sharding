@@ -16,6 +16,7 @@ import com.ustsinau.transactionapi.repository.TransferRepository;
 import com.ustsinau.transactionapi.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shardingsphere.infra.hint.HintManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,16 +58,6 @@ public class TransferService {
             throw new InsufficientFundsException("Insufficient funds in the wallet", "INSUFFICIENT_FUNDS");
         }
 
-        // Снимаем сумму с баланса кошелька-отправителя
-        BigDecimal newBalanceFrom = currentBalanceFrom.subtract(request.getAmount());
-        walletFrom.setBalance(newBalanceFrom);
-        walletRepository.save(walletFrom);
-
-        // Добавляем конвертированную сумму на баланс кошелька-получателя
-        BigDecimal currentBalanceTo = walletTo.getBalance();
-        BigDecimal newBalanceTo = currentBalanceTo.add(convertedAmount);
-        walletTo.setBalance(newBalanceTo);
-        walletRepository.save(walletTo);
 
         PaymentEntity paymentEntityFrom = paymentService.createPaymentRequest(
                 request.getUserUid(),
@@ -84,25 +75,47 @@ public class TransferService {
 
         TransactionalEntity transactionalEntity = transactionService
                 .createTransaction(TransactionalEntity
-                                .builder()
-                                .paymentRequest(paymentEntityFrom)
-                                .type(TypeTransaction.valueOf(request.getType()))
-                                .state(TransactionState.valueOf(request.getState()))
-                                .amount(request.getAmount())
-                                .userUid(UUID.fromString(request.getUserUid()))
-                                .walletName(walletFrom.getName())
-                                .wallet(walletFrom)
-                                .build());
+                        .builder()
+                        .createdAt(LocalDateTime.now())
+                        .paymentRequest(paymentEntityFrom)
+                        .type(TypeTransaction.valueOf(request.getType()))
+                        .state(TransactionState.valueOf(request.getState()))
+                        .amount(request.getAmount())
+                        .userUid(UUID.fromString(request.getUserUid()))
+                        .walletName(walletFrom.getName())
+                        .wallet(walletFrom)
+                        .build());
 
-        transferRepository.save(TransferEntity
-                .builder()
-                .createdAt(LocalDateTime.now())
-                .paymentRequestFrom(paymentEntityFrom)
-                .paymentRequestTo(paymentEntityTo)
-                .build());
+        try (HintManager hintManager = HintManager.getInstance()) {
+//            HintManager.clear();
+            hintManager.addDatabaseShardingValue("transfer_requests", request.getUserUid());
 
-        return TransactionResponse.toResponse(transactionalMapper.map(transactionalEntity));
+            transferRepository.save(TransferEntity
+                    .builder()
+                    .createdAt(LocalDateTime.now())
+                    .paymentRequestFrom(paymentEntityFrom)
+                    .paymentRequestTo(paymentEntityTo)
+                    .systemRate(request.getSystemRate())
+                    .build());
 
+            // Снимаем сумму с баланса кошелька-отправителя
+            BigDecimal newBalanceFrom = currentBalanceFrom.subtract(request.getAmount());
+            walletFrom.setBalance(newBalanceFrom);
+            walletRepository.updateBalance(walletFrom.getUid(), walletFrom.getBalance());
+
+            // Добавляем конвертированную сумму на баланс кошелька-получателя
+            BigDecimal currentBalanceTo = walletTo.getBalance();
+            BigDecimal newBalanceTo = currentBalanceTo.add(convertedAmount);
+            walletTo.setBalance(newBalanceTo);
+            walletRepository.updateBalance(walletTo.getUid(), walletTo.getBalance());
+
+            return TransactionResponse.toResponse(transactionalMapper.map(transactionalEntity));
+        } catch (Exception e) {
+            // Логируем ошибку
+            log.error("Transfer failed for request: {}", request, e);
+            // Пробрасываем оригинальное исключение
+            throw e;
+        }
     }
 
 

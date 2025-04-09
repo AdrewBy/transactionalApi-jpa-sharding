@@ -26,6 +26,7 @@ public class MyHintShardingAlgorithm implements HintShardingAlgorithm<String> {
         }
 
         UUID paymentUid = UUID.fromString(shardingValue.getValues().iterator().next());
+//        UUID paymentUid = shardingValue.getValues().iterator().next();
         int shardIndex = Math.abs(paymentUid.hashCode()) % availableTargetNames.size();
         String selectedShard = new ArrayList<>(availableTargetNames).get(shardIndex);
 

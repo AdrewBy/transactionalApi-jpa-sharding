@@ -18,8 +18,6 @@ public class WithdrawalRequestDto {
 
     private String walletUid;
 
-    private String walletName;
-
     private BigDecimal amount;
 
     private String type;

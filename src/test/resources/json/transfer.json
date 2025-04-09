@@ -1,0 +1,11 @@
+{
+  "userUid": "123e4567-e89b-12d3-a456-426614174000",
+  "walletUidFrom": "b0d3164d-787e-4df8-add0-df7f80575b7e",
+  "walletUidTo": "7bcedfc5-6d15-4194-9279-e6ed93368a9c",
+  "amount": "15",
+  "type": "TRANSFER",
+  "state": "PENDING",
+  "comment": "transfer",
+  "paymentMethodId": "3",
+  "systemRate": "0.15"
+}
