@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -88,12 +89,12 @@ public class ContainersConfiguration {
                 yaml.append("    dataSourceClassName: com.zaxxer.hikari.HikariDataSource\n");
                 yaml.append("    driverClassName: org.postgresql.Driver\n");
                 yaml.append("    jdbcUrl: jdbc:postgresql://")
-                        .append(container.getHost()).append(":")
-                        .append(container.getMappedPort(5432)).append("/")
-                        .append(container.getDatabaseName()).append("\n");
+                        .append(container.getHost()) // Используем host контейнера
+                        .append(":")
+                        .append(container.getMappedPort(5432)) // Используем порт, присвоенный контейнеру
+                        .append("/").append(container.getDatabaseName()).append("\n");
                 yaml.append("    username: ").append(container.getUsername()).append("\n");
-                yaml.append("    password: ").append(container.getPassword()).append("\n");
-            }
+                yaml.append("    password: ").append(container.getPassword()).append("\n");}
 
             // 🔧 Добавляем часть с rules
             InputStream rulesStream = new ClassPathResource("config-sharding-rules.yaml").getInputStream();

@@ -1,27 +1,27 @@
 services:
 
-  shardingsphere-proxy:
-    image: apache/shardingsphere-proxy:latest
-    container_name: shardingsphere-proxy
-    ports:
-      - "3308:3308"
-    environment:
-      JVM_OPTS: -Djava.awt.headless=true
-      PORT: 3308
-    volumes:
-      - ./shardingsphere-proxy/conf:/opt/shardingsphere-proxy/conf
- #      Для монтирования файла (не директории)
-      - type: bind
-        source: ./target/transaction-api-1.0.0.jar
-        target: /opt/shardingsphere-proxy/ext-lib/transaction-api-1.0.0.jar
-        read_only: true
-    depends_on:
-      - db0
-      - db1
-      - db2
-      - db3
-    networks:
-      - app-network
+#  shardingsphere-proxy:
+#    image: apache/shardingsphere-proxy:latest
+#    container_name: shardingsphere-proxy
+#    ports:
+#      - "3308:3308"
+#    environment:
+#      JVM_OPTS: -Djava.awt.headless=true
+#      PORT: 3308
+#    volumes:
+#      - ./shardingsphere-proxy/conf:/opt/shardingsphere-proxy/conf
+# #      Для монтирования файла (не директории)
+#      - type: bind
+#        source: ./target/transaction-api-1.0.0.jar
+#        target: /opt/shardingsphere-proxy/ext-lib/transaction-api-1.0.0.jar
+#        read_only: true
+#    depends_on:
+#      - db0
+#      - db1
+#      - db2
+#      - db3
+#    networks:
+#      - app-network
 
 
   db0:

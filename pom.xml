@@ -45,6 +45,13 @@
             <artifactId>shardingsphere-transaction-xa-narayana</artifactId>
             <version>${shardingsphere.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.jboss.narayana.jta</groupId>
+            <artifactId>narayana-jta-tools</artifactId>
+            <version>${narayana.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.jboss.narayana.jta</groupId>
             <artifactId>narayana-jta</artifactId>
