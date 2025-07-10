@@ -8,4 +8,5 @@ import java.util.UUID;
 
 
 public interface PaymentRequestRepository extends JpaRepository<PaymentEntity, UUID> {
+
 }

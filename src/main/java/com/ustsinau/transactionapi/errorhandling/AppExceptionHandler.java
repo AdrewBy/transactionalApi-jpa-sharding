@@ -31,6 +31,12 @@ public class AppExceptionHandler {
 
     }
 
+    @ExceptionHandler(PaymentNotFoundException.class)
+    public ResponseEntity<Object> handlePaymentNotFoundException(PaymentNotFoundException ex) {
+        return buildErrorResponse(ex, HttpStatus.NOT_FOUND);
+
+    }
+
     @ExceptionHandler(InsufficientFundsException.class)
     public ResponseEntity<Object> handleInsufficientFundsException(InsufficientFundsException ex) {
         return buildErrorResponse(ex, HttpStatus.BAD_REQUEST);

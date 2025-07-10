@@ -84,7 +84,9 @@ public class WithdrawalService {
             log.info("Current balance: " + currentBalance);
             BigDecimal newBalance = currentBalance.subtract(request.getAmount());
             wallet.setBalance(newBalance);
-            walletRepository.updateBalance(wallet.getUid(), wallet.getBalance());
+            walletRepository.updateBalance(wallet.getUid(),
+                    wallet.getBalance(),
+                    wallet.getUserUid());
 //            walletRepository.save(wallet);
             log.info("newBalance balance: " + newBalance);
             return TransactionResponse.toResponse(transactionalMapper.map(transactionalEntity));

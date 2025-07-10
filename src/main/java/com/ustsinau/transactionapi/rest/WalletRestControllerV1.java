@@ -42,7 +42,7 @@ public class WalletRestControllerV1 {
         return walletMapper.map(walletService.createWallet(request));
     }
 
-    @PostMapping
+    @PostMapping("/user/update/")
     public WalletDto updateWallet(@RequestBody WalletDto request) {
         return walletService.updateWallet(request);
     }

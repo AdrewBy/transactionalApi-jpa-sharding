@@ -15,9 +15,7 @@ import java.util.UUID;
 @Repository
 public interface WalletRepository extends JpaRepository<WalletEntity, UUID> {
 
-
     List<WalletEntity> findByUserUid(UUID uid);
-
 
     @Query("SELECT w FROM WalletEntity w " +
             "JOIN w.walletType wt " +
@@ -27,8 +25,11 @@ public interface WalletRepository extends JpaRepository<WalletEntity, UUID> {
             @Param("currency") String currency
     );
 
-
     @Modifying
-    @Query("UPDATE WalletEntity w SET w.balance = :balance WHERE w.uid = :uid")
-    void updateBalance(@Param("uid") UUID uid, @Param("balance") BigDecimal balance);
+    @Query("UPDATE WalletEntity w " +
+            "SET w.balance = :balance " +
+            "WHERE w.uid = :uid AND w.userUid = :userUid")
+    void updateBalance(@Param("uid") UUID uid,
+                       @Param("balance") BigDecimal balance,
+                       @Param("userUid") UUID userUid);
 }

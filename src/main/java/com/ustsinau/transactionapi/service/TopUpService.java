@@ -80,7 +80,9 @@ public class TopUpService {
             topUpRepository.save(topUp);
 
             wallet.setBalance(wallet.getBalance().add(request.getAmount()));
-            walletRepository.updateBalance(wallet.getUid(), wallet.getBalance());
+            walletRepository.updateBalance(wallet.getUid(),
+                    wallet.getBalance(),
+                    wallet.getUserUid());
 
             return TransactionResponse.toResponse(transactionalMapper.map(transactionalEntity));
         } catch (Exception e) {
