@@ -47,9 +47,10 @@ public class PaymentService {
         paymentEntity.setPaymentMethodId(paymentMethodId);
         paymentEntity.setCreatedAt(LocalDateTime.now());
 
-        try (HintManager hintManager = HintManager.getInstance()) {
-            hintManager.addDatabaseShardingValue("payment_requests", userUid);
             return paymentRequestRepository.save(paymentEntity);
-        }
+    }
+
+    public void cancelPayment(UUID uid) {
+        paymentRequestRepository.deleteById(uid);
     }
 }

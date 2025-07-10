@@ -44,7 +44,8 @@ public class WalletEntity {
     @Column(length = 30)
     private Status status;
 
-    @Column(name = "balance", nullable = false, columnDefinition = "decimal(19, 2) default 0.0")
+    //  @Column(name = "balance", nullable = false, columnDefinition = "decimal(19, 2) default 0.0")
+    @Column(name = "balance", precision = 19, scale = 2)
     private BigDecimal balance;
 
     @Column(nullable = true)

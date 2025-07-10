@@ -59,4 +59,8 @@ public class TransactionService {
     }
 
 
+    public void cancelTransaction(UUID uid) {
+
+        transactionRepository.deleteById(uid);
+    }
 }
