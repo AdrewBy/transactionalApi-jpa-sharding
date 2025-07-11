@@ -1,9 +1,8 @@
 package com.ustsinau.transactionapi.repository;
 
 import com.ustsinau.transactionapi.entity.TransactionalEntity;
-
-
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -32,5 +31,7 @@ public interface TransactionRepository extends JpaRepository<TransactionalEntity
             @Param("dateTo") LocalDateTime dateTo
     );
 
-
+    @Modifying
+    @Query("DELETE FROM TransactionalEntity t WHERE t.uid = :uid")
+    void cancelById(@Param("uid") UUID transactionalUid);
 }

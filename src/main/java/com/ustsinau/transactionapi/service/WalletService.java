@@ -10,12 +10,12 @@ import com.ustsinau.transactionapi.enums.Status;
 import com.ustsinau.transactionapi.exception.WalletNotFoundException;
 import com.ustsinau.transactionapi.mappers.WalletMapper;
 import com.ustsinau.transactionapi.repository.WalletRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,6 +33,11 @@ public class WalletService {
     private final WalletTypeService walletTypeService;
 
 
+
+    public WalletEntity getById(UUID uuid) {
+        return walletRepository.findById(uuid)
+                .orElseThrow(() -> new WalletNotFoundException("Wallet not found with UID: " + uuid, "WALLET_NOT_FOUND"));
+    }
 
     public List<WalletResponse> getUserWallets(String uid) {
 
@@ -61,6 +66,11 @@ public class WalletService {
                 .status(Status.ACTIVE)
                 .balance(BigDecimal.ZERO)
                 .build());
+    }
+
+    @Transactional
+    public void updateBalance(UUID uid, BigDecimal balance, UUID userUid) {
+        walletRepository.updateBalance(uid, balance, userUid);
     }
 
     public WalletDto updateWallet(WalletDto request) {
@@ -111,6 +121,7 @@ public class WalletService {
         response.setCreatedAt(wallet.getCreatedAt());
         return response;
     }
+
 
 
 }

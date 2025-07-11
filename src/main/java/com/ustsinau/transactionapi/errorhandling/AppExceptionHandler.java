@@ -37,6 +37,12 @@ public class AppExceptionHandler {
 
     }
 
+    @ExceptionHandler(TransferFailedException.class)
+    public ResponseEntity<Object> handleTransferFailedException(TransferFailedException ex) {
+        return buildErrorResponse(ex, HttpStatus.NOT_FOUND);
+
+    }
+
     @ExceptionHandler(InsufficientFundsException.class)
     public ResponseEntity<Object> handleInsufficientFundsException(InsufficientFundsException ex) {
         return buildErrorResponse(ex, HttpStatus.BAD_REQUEST);

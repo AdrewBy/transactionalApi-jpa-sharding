@@ -10,15 +10,14 @@ import com.ustsinau.transactionapi.entity.WithdrawalEntity;
 import com.ustsinau.transactionapi.enums.TransactionState;
 import com.ustsinau.transactionapi.enums.TypeTransaction;
 import com.ustsinau.transactionapi.exception.InsufficientFundsException;
-import com.ustsinau.transactionapi.exception.WalletNotFoundException;
+import com.ustsinau.transactionapi.exception.TransferFailedException;
 import com.ustsinau.transactionapi.mappers.TransactionalMapper;
-import com.ustsinau.transactionapi.repository.WalletRepository;
 import com.ustsinau.transactionapi.repository.WithdrawRepository;
+import com.ustsinau.transactionapi.service.compensation.CompensationWithdrawService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.shardingsphere.infra.hint.HintManager;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -26,79 +25,100 @@ import java.util.UUID;
 
 
 @Slf4j
-@Service
+@RestController
 @RequiredArgsConstructor
 public class WithdrawalService {
 
     private final WithdrawRepository withdrawRepository;
-    private final WalletRepository walletRepository;
+
+    private final WalletService walletService;
 
     private final PaymentService paymentService;
+
     private final TransactionService transactionService;
 
     private final TransactionalMapper transactionalMapper;
 
-    @Transactional
+    private final CompensationWithdrawService compensateWithdrawal;
+
+
+    @Transactional(rollbackFor = Exception.class)
     public TransactionResponse createWithdrawalPayment(WithdrawalRequestDto request) {
 
-        WalletEntity wallet = walletRepository.findById(UUID.fromString(request.getWalletUid()))
-                .orElseThrow(() -> new WalletNotFoundException("Wallet not found with UID: " + request.getWalletUid(), "WALLET_NOT_FOUND"));
-
+        WalletEntity wallet = walletService.getById(UUID.fromString(request.getWalletUid()));
         // Проверяем, достаточно ли средств на кошельке
-        BigDecimal currentBalance = wallet.getBalance();
-        if (currentBalance.compareTo(request.getAmount()) < 0) {
+        BigDecimal oldBalance = wallet.getBalance();
+
+        if (oldBalance.compareTo(request.getAmount()) < 0) {
             throw new InsufficientFundsException("Insufficient funds in the wallet", "INSUFFICIENT_FUNDS");
         }
 
-        PaymentEntity paymentEntity = paymentService.createPaymentRequest(
-                request.getUserUid(),
-                request.getWalletUid(),
-                request.getAmount(),
-                request.getComment(),
-                request.getPaymentMethodId());
+        PaymentEntity paymentEntity = null;
+        TransactionalEntity transaction = null;
+        WithdrawalEntity withdrawal = null;
 
-        TransactionalEntity transactionalEntity = transactionService
-                .createTransaction(TransactionalEntity
-                        .builder()
-                        .createdAt(LocalDateTime.now())
-                        .paymentRequest(paymentEntity)
-                        .type(TypeTransaction.valueOf(request.getType()))
-                        .state(TransactionState.valueOf(request.getState()))
-                        .amount(request.getAmount())
-                        .userUid(UUID.fromString(request.getUserUid()))
-                        .walletName(wallet.getName())
-                        .wallet(wallet)
-                        .build());
+        try {
+            paymentEntity = paymentService.createPaymentRequest(
+                    request.getUserUid(),
+                    request.getWalletUid(),
+                    request.getAmount(),
+                    request.getComment(),
+                    request.getPaymentMethodId());
 
-        try (HintManager hintManager = HintManager.getInstance()) {
-//            HintManager.clear();
-            hintManager.addDatabaseShardingValue("withdrawal_requests", request.getUserUid());
+            transaction = transactionService.createTransaction(
+                    buildTransactionalEntity(paymentEntity, wallet, request));
 
-            withdrawRepository.save(WithdrawalEntity
+            withdrawal = withdrawRepository.save(WithdrawalEntity
                     .builder()
                     .createdAt(LocalDateTime.now())
                     .paymentRequest(paymentEntity)
                     .build());
 
             // Снимаем сумму с баланса кошелька
-            log.info("Current balance: " + currentBalance);
-            BigDecimal newBalance = currentBalance.subtract(request.getAmount());
+            BigDecimal newBalance = oldBalance.subtract(request.getAmount());
             wallet.setBalance(newBalance);
-            walletRepository.updateBalance(wallet.getUid(),
+            walletService.updateBalance(wallet.getUid(),
                     wallet.getBalance(),
                     wallet.getUserUid());
-//            walletRepository.save(wallet);
-            log.info("newBalance balance: " + newBalance);
-            return TransactionResponse.toResponse(transactionalMapper.map(transactionalEntity));
 
+            return TransactionResponse.toResponse(transactionalMapper.map(transaction));
 
-        } catch (Exception e) {
+        } catch (Exception ex) {
+            try {
+                // Выносим компенсацию в отдельный сервис
+                compensateWithdrawal.compensateWithdrawal(
+                        withdrawal != null ? withdrawal.getUid() : null,
+                        transaction != null ? transaction.getUid() : null,
+                        paymentEntity != null ? paymentEntity.getUid() : null,
+                        wallet.getUid(),
+                        oldBalance,
+                        wallet.getUserUid()
+                );
+            } catch (Exception compEx) {
+                log.error("Compensation failed", compEx);
+                // Добавляем информацию о проблеме компенсации в основное исключение
+                ex.addSuppressed(compEx);
+            }
 
-            log.error("Withdrawal failed for request: {}", request, e);
-            // Пробрасываем оригинальное исключение
-            throw e;
+            throw new TransferFailedException("Withdraw failed: " + ex.getMessage(), "WITHDRAW_FAILED");
         }
 
+    }
+
+    private TransactionalEntity buildTransactionalEntity(PaymentEntity paymentEntityFrom,
+                                                         WalletEntity walletFrom,
+                                                         WithdrawalRequestDto request) {
+        return TransactionalEntity
+                .builder()
+                .createdAt(LocalDateTime.now())
+                .paymentRequest(paymentEntityFrom)
+                .type(TypeTransaction.valueOf(request.getType()))
+                .state(TransactionState.valueOf(request.getState()))
+                .amount(request.getAmount())
+                .userUid(UUID.fromString(request.getUserUid()))
+                .walletName(walletFrom.getName())
+                .wallet(walletFrom)
+                .build();
     }
 
 }

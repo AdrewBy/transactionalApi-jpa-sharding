@@ -10,11 +10,10 @@ import com.ustsinau.transactionapi.entity.WalletEntity;
 import com.ustsinau.transactionapi.enums.TransactionState;
 import com.ustsinau.transactionapi.enums.TypeTransaction;
 import com.ustsinau.transactionapi.exception.InsufficientFundsException;
-import com.ustsinau.transactionapi.exception.TransactionNotFoundException;
-import com.ustsinau.transactionapi.exception.WalletNotFoundException;
+import com.ustsinau.transactionapi.exception.TransferFailedException;
 import com.ustsinau.transactionapi.mappers.TransactionalMapper;
 import com.ustsinau.transactionapi.repository.TransferRepository;
-import com.ustsinau.transactionapi.repository.WalletRepository;
+import com.ustsinau.transactionapi.service.compensation.CompensationTransferService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,23 +31,25 @@ import java.util.UUID;
 public class TransferService {
 
     private final TransferRepository transferRepository;
-    private final WalletRepository walletRepository;
+
+    private final WalletService walletService;
 
     private final PaymentService paymentService;
+
     private final TransactionService transactionService;
 
     private final TransactionalMapper transactionalMapper;
+
+    private final CompensationTransferService compensationTransferService;
 
     private final BigDecimal COMMISSION_RATE = new BigDecimal("0.01");
 
     @Transactional(rollbackFor = Exception.class)
     public TransactionResponse createTransferPayment(TransferRequestDto request) {
 
-        WalletEntity walletFrom = walletRepository.findById(UUID.fromString(request.getWalletUidFrom()))
-                .orElseThrow(() -> new WalletNotFoundException("Wallet not found with UID: " + request.getWalletUidFrom(), "WALLET_NOT_FOUND"));
+        WalletEntity walletFrom = walletService.getById(UUID.fromString(request.getWalletUidFrom()));
 
-        WalletEntity walletTo = walletRepository.findById(UUID.fromString(request.getWalletUidTo()))
-                .orElseThrow(() -> new WalletNotFoundException("Wallet not found with UID: " + request.getWalletUidTo(), "WALLET_NOT_FOUND"));
+        WalletEntity walletTo = walletService.getById(UUID.fromString(request.getWalletUidTo()));
 
         BigDecimal oldBalanceTo = walletTo.getBalance();
 
@@ -56,8 +57,8 @@ public class TransferService {
         BigDecimal convertedAmount = getConvertedAmount(request);
 
         // Проверяем, достаточно ли средств на кошельке
-        BigDecimal currentBalanceFrom = walletFrom.getBalance();
-        if (currentBalanceFrom.compareTo(request.getAmount()) < 0) {
+        BigDecimal oldBalanceFrom = walletFrom.getBalance();
+        if (oldBalanceFrom.compareTo(request.getAmount()) < 0) {
             throw new InsufficientFundsException("Insufficient funds in the wallet", "INSUFFICIENT_FUNDS");
         }
 
@@ -68,7 +69,6 @@ public class TransferService {
         TransferEntity transfer = null;
 
         try {
-            //   HintManager.clear();
             // 1. Операции с платежами
             paymentEntityFrom = paymentService.createPaymentRequest(
                     request.getUserUid(),
@@ -84,54 +84,48 @@ public class TransferService {
                     request.getComment(),
                     request.getPaymentMethodId());
 
-
             // 2. Создание транзакции
             transaction = transactionService.createTransaction(
                     buildTransactionalEntity(paymentEntityFrom, walletFrom, request));
 
             // 3. Обновление балансов
-            BigDecimal newBalanceFrom = currentBalanceFrom.subtract(request.getAmount());
+            BigDecimal newBalanceFrom = oldBalanceFrom.subtract(request.getAmount());
             walletFrom.setBalance(newBalanceFrom);
-            walletRepository.updateBalance(
-                    walletFrom.getUid(),
-                    walletFrom.getBalance(),
-                    walletFrom.getUserUid() // Используем user_uid для шардирования
-            );
+            // Используем user_uid для шардирования
+            walletService.updateBalance(walletFrom.getUid(), walletFrom.getBalance(), walletFrom.getUserUid());
             // Обновление баланса получателя
-            BigDecimal newBalanceTo = walletTo.getBalance().add(convertedAmount)
-                    .setScale(2, RoundingMode.HALF_UP);
+            BigDecimal newBalanceTo = walletTo.getBalance().add(convertedAmount).setScale(2, RoundingMode.HALF_UP);
             walletTo.setBalance(newBalanceTo);
-            walletRepository.updateBalance(
-                    walletTo.getUid(),
-                    walletTo.getBalance(),
-                    walletTo.getUserUid());
+            walletService.updateBalance(walletTo.getUid(), walletTo.getBalance(), walletTo.getUserUid());
 
             // 4. Создание трансфера
-            transfer = transferRepository.save(buildTransferEntity(
-                    paymentEntityFrom
-                    , paymentEntityTo
-                    , request));
-
+            transfer = transferRepository.save(buildTransferEntity(paymentEntityFrom, paymentEntityTo, request));
+            log.info("Transfer UID {} was saved", transfer.getUid());
+            // Искусственно вызываем ошибку (например, для тестирования отката)
+         //              throw new RuntimeException("Искусственная ошибка после сохранения transfer");
             return TransactionResponse.toResponse(transactionalMapper.map(transaction));
 
-        } catch (Exception e) {
-            // Компенсирующие операции
-            try {
-                if (transfer != null) transferRepository.delete(transfer);
-                if (transaction != null) transactionService.cancelTransaction(transaction.getUid());
-                if (paymentEntityTo != null) paymentService.cancelPayment(paymentEntityTo.getUid());
-                if (paymentEntityFrom != null) paymentService.cancelPayment(paymentEntityFrom.getUid());
+        } catch (Exception exe) {
 
-                // Возвращаем балансы
-                if (walletFrom != null && walletTo != null) {
-                    walletRepository.updateBalance(walletFrom.getUid(), currentBalanceFrom, UUID.fromString(request.getUserUid()));
-                    walletRepository.updateBalance(walletTo.getUid(), oldBalanceTo, UUID.fromString(request.getUserUid()));
-                }
+            try {
+                compensationTransferService.compensateTransfer(
+                        transfer != null ? transfer.getUid() : null,
+                        transaction != null ? transaction.getUid() : null,
+                        paymentEntityFrom != null ? paymentEntityFrom.getUid() : null,
+                        paymentEntityTo != null ? paymentEntityTo.getUid() : null,
+                        walletFrom.getUid(),
+                        walletTo.getUid(),
+                        oldBalanceFrom,
+                        oldBalanceTo,
+                        walletFrom.getUserUid()
+                );
 
             } catch (Exception compEx) {
                 log.error("Compensation failed", compEx);
+                // Добавляем информацию о проблеме компенсации в основное исключение
+                exe.addSuppressed(compEx);
             }
-            throw new TransactionNotFoundException("Transfer failed", "" + e);
+            throw new TransferFailedException("Transfer failed : " + exe.getMessage(), "TRANSFER_FAILED");
         }
     }
 
@@ -160,18 +154,14 @@ public class TransferService {
                 .paymentRequestTo(paymentTo)
                 .systemRate(request.getSystemRate())
                 .build();
-
     }
 
     private BigDecimal getConvertedAmount(TransferRequestDto request) {
         BigDecimal systemRate = new BigDecimal(request.getSystemRate());
-
         // Рассчитываем комиссию (например, 1% от суммы перевода)
         BigDecimal commission = request.getAmount().multiply(COMMISSION_RATE);
-
         // Вычитаем комиссию из суммы перевода
         BigDecimal amountAfterCommission = request.getAmount().subtract(commission);
-
         // Конвертируем сумму в валюту кошелька-получателя
         return amountAfterCommission.multiply(systemRate);
     }

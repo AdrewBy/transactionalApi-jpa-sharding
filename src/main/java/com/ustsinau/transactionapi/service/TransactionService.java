@@ -45,10 +45,13 @@ public class TransactionService {
 
     @Transactional
     public TransactionalEntity createTransaction(TransactionalEntity entity) {
-
         return transactionRepository.save(entity);
     }
 
+    @Transactional
+    public void forceDelete(UUID transactionalUid) {
+        transactionRepository.cancelById(transactionalUid);
+    }
 
     private TransactionStatusResponse toResponseStatus(TransactionalDto transaction) {
         TransactionStatusResponse response = new TransactionStatusResponse();
@@ -58,9 +61,4 @@ public class TransactionService {
         return response;
     }
 
-
-    public void cancelTransaction(UUID uid) {
-
-        transactionRepository.deleteById(uid);
-    }
 }
