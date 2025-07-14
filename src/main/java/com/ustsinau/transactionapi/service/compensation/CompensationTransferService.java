@@ -1,9 +1,8 @@
 package com.ustsinau.transactionapi.service.compensation;
 
-import com.ustsinau.transactionapi.repository.TransferRepository;
-import com.ustsinau.transactionapi.repository.WithdrawRepository;
 import com.ustsinau.transactionapi.service.PaymentService;
 import com.ustsinau.transactionapi.service.TransactionService;
+import com.ustsinau.transactionapi.service.TransferService;
 import com.ustsinau.transactionapi.service.WalletService;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +19,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CompensationTransferService {
 
-    private final TransferRepository transferRepository;
+    private final TransferService transferService;
     private final TransactionService transactionService;
     private final PaymentService paymentService;
     private final WalletService walletService;
@@ -41,19 +40,19 @@ public class CompensationTransferService {
         try {
 
             if (transferUid != null) {
-                transferRepository.forceDelete(transferUid);  // Явное удаление
+                transferService.hardDeleteById(transferUid);  // Явное удаление
                 log.info("Transfer UID {} was force-deleted, transfer failed.", transferUid);
             }
             if (transactionUid != null) {
-                transactionService.forceDelete(transactionUid);
+                transactionService.hardDeleteById(transactionUid);
                 log.info("Transaction with UID {} was force-deleted, transfer failed", transactionUid);
             }
             if (paymentUidTo != null) {
-                paymentService.forceDelete(paymentUidTo);
+                paymentService.hardDeleteById(paymentUidTo);
                 log.info("PaymentEntityTo with UID {} was force-deleted, transfer failed.", paymentUidTo);
             }
             if (paymentUidFrom != null) {
-                paymentService.forceDelete(paymentUidFrom);
+                paymentService.hardDeleteById(paymentUidFrom);
                 log.info("PaymentEntityFrom with UID {} was force-deleted, transfer failed.", paymentUidFrom);
             }
             walletService.updateBalance(walletUidTo, oldBalanceTo, userUid);

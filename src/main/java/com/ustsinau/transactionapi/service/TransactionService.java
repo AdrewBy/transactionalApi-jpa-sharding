@@ -49,7 +49,7 @@ public class TransactionService {
     }
 
     @Transactional
-    public void forceDelete(UUID transactionalUid) {
+    public void hardDeleteById(UUID transactionalUid) {
         transactionRepository.cancelById(transactionalUid);
     }
 

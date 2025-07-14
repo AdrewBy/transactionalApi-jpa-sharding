@@ -9,18 +9,17 @@ import com.ustsinau.transactionapi.entity.TransactionalEntity;
 import com.ustsinau.transactionapi.entity.WalletEntity;
 import com.ustsinau.transactionapi.enums.TransactionState;
 import com.ustsinau.transactionapi.enums.TypeTransaction;
-import com.ustsinau.transactionapi.exception.WalletNotFoundException;
+import com.ustsinau.transactionapi.exception.TransferFailedException;
 import com.ustsinau.transactionapi.mappers.TransactionalMapper;
 import com.ustsinau.transactionapi.repository.TopUpRepository;
 import com.ustsinau.transactionapi.repository.WalletRepository;
+import com.ustsinau.transactionapi.service.compensation.CompensationTopUpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.shardingsphere.infra.hint.HintManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
-import java.sql.SQLException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -34,62 +33,84 @@ public class TopUpService {
 
     private final PaymentService paymentService;
     private final TransactionService transactionService;
+    private final WalletService walletService;
 
     private final TransactionalMapper transactionalMapper;
+
+    private final CompensationTopUpService compensationTopUpService;
 
     @Transactional
     public TransactionResponse createTopUpPayment(TopUpRequestDto request) {
 
-        WalletEntity wallet = walletRepository.findById(UUID.fromString(request.getWalletUid()))
-                .orElseThrow(() -> new WalletNotFoundException("Wallet not found with UID: " + request.getWalletUid(), "WALLET_NOT_FOUND"));
+        WalletEntity wallet = walletService.getById(UUID.fromString(request.getWalletUid()));
+        BigDecimal oldBalance = wallet.getBalance();
 
-        PaymentEntity paymentEntity = paymentService.createPaymentRequest(
-                request.getUserUid(),
-                request.getWalletUid(),
-                request.getAmount(),
-                request.getComment(),
-                request.getPaymentMethodId()
-        );
+        PaymentEntity paymentEntity = null;
+        TransactionalEntity transaction = null;
+        TopUpEntity topUp = null;
+        try {
+            paymentEntity = paymentService.createPaymentRequest(
+                    request.getUserUid(),
+                    request.getWalletUid(),
+                    request.getAmount(),
+                    request.getComment(),
+                    request.getPaymentMethodId());
 
-        TransactionalEntity transactionalEntity = transactionService
-                .createTransaction(TransactionalEntity
-                        .builder()
-                        .createdAt(LocalDateTime.now())
-                        .paymentRequest(paymentEntity)
-                        .type(TypeTransaction.valueOf(request.getType()))
-                        .state(TransactionState.valueOf(request.getState()))
-                        .amount(request.getAmount())
-                        .userUid(UUID.fromString(request.getUserUid()))
-                        .walletName(wallet.getName())
-                        .wallet(wallet)
-                        .build());
+            transaction = transactionService.createTransaction(
+                    buildTransactionalEntity(paymentEntity, wallet, request));
 
-
-
-        try (HintManager hintManager = HintManager.getInstance()) {
-//            HintManager.clear();
-            hintManager.addDatabaseShardingValue("top_up_requests", request.getUserUid());
-
-            TopUpEntity topUp = TopUpEntity.builder()
-                .provider(request.getProvider())
-//                    .provider(null)
+            topUp = topUpRepository.save(TopUpEntity
+                    .builder()
                     .createdAt(LocalDateTime.now())
                     .paymentRequest(paymentEntity)
-                    .build();
-            
-            topUpRepository.save(topUp);
+                    .build());
 
             wallet.setBalance(wallet.getBalance().add(request.getAmount()));
             walletRepository.updateBalance(wallet.getUid(),
                     wallet.getBalance(),
                     wallet.getUserUid());
 
-            return TransactionResponse.toResponse(transactionalMapper.map(transactionalEntity));
-        } catch (Exception e) {
-            // Любая другая ошибка (например, NullPointerException, IllegalArgumentException)
-            throw new NullPointerException();
+            return TransactionResponse.toResponse(transactionalMapper.map(transaction));
+
+        } catch (Exception ex) {
+            try {
+                compensationTopUpService.compensateTopUp(
+                        topUp != null ? topUp.getUid() : null,
+                        transaction != null ? transaction.getUid() : null,
+                        paymentEntity != null ? paymentEntity.getUid() : null,
+                        wallet.getUid(),
+                        oldBalance,
+                        wallet.getUserUid()
+                );
+            } catch (Exception compEx) {
+                log.error("Compensation failed", compEx);
+                // Добавляем информацию о проблеме компенсации в основное исключение
+                ex.addSuppressed(compEx);
+            }
+            throw new TransferFailedException("Withdraw failed: " + ex.getMessage(), "WITHDRAW_FAILED");
         }
-
-
     }
+
+    public void hardDeleteById(UUID topUpUid) {
+        topUpRepository.forceDelete(topUpUid);
+    }
+
+    private TransactionalEntity buildTransactionalEntity(PaymentEntity paymentEntityFrom,
+                                                         WalletEntity walletFrom,
+                                                         TopUpRequestDto request) {
+        return TransactionalEntity
+                .builder()
+                .createdAt(LocalDateTime.now())
+                .paymentRequest(paymentEntityFrom)
+                .type(TypeTransaction.valueOf(request.getType()))
+                .state(TransactionState.valueOf(request.getState()))
+                .amount(request.getAmount())
+                .userUid(UUID.fromString(request.getUserUid()))
+                .walletName(walletFrom.getName())
+                .wallet(walletFrom)
+                .build();
+    }
+
+
+
 }

@@ -1,10 +1,9 @@
 package com.ustsinau.transactionapi.service.compensation;
 
-
 import com.ustsinau.transactionapi.service.PaymentService;
+import com.ustsinau.transactionapi.service.TopUpService;
 import com.ustsinau.transactionapi.service.TransactionService;
 import com.ustsinau.transactionapi.service.WalletService;
-import com.ustsinau.transactionapi.service.WithdrawalService;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,19 +14,21 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CompensationWithdrawService {
-    private final WithdrawalService withdrawService;
+public class CompensationTopUpService {
+
+    private final TopUpService topUpService;
     private final TransactionService transactionService;
     private final PaymentService paymentService;
     private final WalletService walletService;
     private final EntityManager entityManager;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void compensateWithdrawal(
-            UUID withdrawalUid,
+    public void compensateTopUp(
+            UUID topUpUid,
             UUID transactionUid,
             UUID paymentUid,
             UUID walletUid,
@@ -35,9 +36,9 @@ public class CompensationWithdrawService {
             UUID userUid
     ) {
         try {
-            if (withdrawalUid != null) {
-                withdrawService.hardDeleteById(withdrawalUid);
-                log.info("Withdraw {} was force-deleted", withdrawalUid);
+            if (topUpUid != null) {
+                topUpService.hardDeleteById(topUpUid);
+                log.info("TopUp {} was force-deleted", topUpUid);
             }
 
             if (transactionUid != null) {
@@ -55,7 +56,7 @@ public class CompensationWithdrawService {
 
             log.info("Compensation completed successfully for wallet {}", walletUid);
         } catch (Exception e) {
-            log.error("Compensation failed for withdrawal {}", withdrawalUid, e);
+            log.error("Compensation failed for withdrawal {}", topUpUid, e);
             throw e; // Пробрасываем исключение, чтобы пометить транзакцию как failed
         }
     }

@@ -50,7 +50,7 @@ public class PaymentService {
 
 
     @Transactional
-    public void forceDelete(UUID uid) {
+    public void hardDeleteById(UUID uid) {
         paymentRequestRepository.forceDelete(uid);
     }
 }

@@ -46,7 +46,7 @@ public class WithdrawalService {
     public TransactionResponse createWithdrawalPayment(WithdrawalRequestDto request) {
 
         WalletEntity wallet = walletService.getById(UUID.fromString(request.getWalletUid()));
-        // Проверяем, достаточно ли средств на кошельке
+
         BigDecimal oldBalance = wallet.getBalance();
 
         if (oldBalance.compareTo(request.getAmount()) < 0) {
@@ -85,7 +85,6 @@ public class WithdrawalService {
 
         } catch (Exception ex) {
             try {
-                // Выносим компенсацию в отдельный сервис
                 compensateWithdrawal.compensateWithdrawal(
                         withdrawal != null ? withdrawal.getUid() : null,
                         transaction != null ? transaction.getUid() : null,
@@ -99,10 +98,13 @@ public class WithdrawalService {
                 // Добавляем информацию о проблеме компенсации в основное исключение
                 ex.addSuppressed(compEx);
             }
-
             throw new TransferFailedException("Withdraw failed: " + ex.getMessage(), "WITHDRAW_FAILED");
         }
 
+    }
+
+    public void hardDeleteById(UUID withdrawUid){
+        withdrawRepository.forceDelete(withdrawUid);
     }
 
     private TransactionalEntity buildTransactionalEntity(PaymentEntity paymentEntityFrom,

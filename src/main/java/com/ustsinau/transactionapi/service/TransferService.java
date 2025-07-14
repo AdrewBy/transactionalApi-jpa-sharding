@@ -129,6 +129,10 @@ public class TransferService {
         }
     }
 
+    public void hardDeleteById(UUID transferUid){
+        transferRepository.forceDelete(transferUid);
+    }
+
     private TransactionalEntity buildTransactionalEntity(PaymentEntity paymentEntityFrom,
                                                          WalletEntity walletFrom,
                                                          TransferRequestDto request) {
