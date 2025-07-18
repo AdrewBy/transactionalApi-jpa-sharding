@@ -16,20 +16,11 @@ import java.time.LocalDateTime;
 public class TopUpRequestDto {
 
     private String userUid;
-
     private String walletUid;
-
     private BigDecimal amount;
-
     private String type;
-
-    private String state;
-
-
     private String comment;
-
     private Long paymentMethodId;
-
 
     private String provider;
 

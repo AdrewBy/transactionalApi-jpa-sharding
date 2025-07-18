@@ -7,12 +7,9 @@ import com.ustsinau.transactionapi.entity.PaymentEntity;
 import com.ustsinau.transactionapi.entity.TopUpEntity;
 import com.ustsinau.transactionapi.entity.TransactionalEntity;
 import com.ustsinau.transactionapi.entity.WalletEntity;
-import com.ustsinau.transactionapi.enums.TransactionState;
-import com.ustsinau.transactionapi.enums.TypeTransaction;
 import com.ustsinau.transactionapi.exception.TransferFailedException;
 import com.ustsinau.transactionapi.mappers.TransactionalMapper;
 import com.ustsinau.transactionapi.repository.TopUpRepository;
-import com.ustsinau.transactionapi.repository.WalletRepository;
 import com.ustsinau.transactionapi.service.compensation.CompensationTopUpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,14 +26,10 @@ import java.util.UUID;
 public class TopUpService {
 
     private final TopUpRepository topUpRepository;
-    private final WalletRepository walletRepository;
-
     private final PaymentService paymentService;
     private final TransactionService transactionService;
     private final WalletService walletService;
-
     private final TransactionalMapper transactionalMapper;
-
     private final CompensationTopUpService compensationTopUpService;
 
     @Transactional
@@ -57,16 +50,21 @@ public class TopUpService {
                     request.getPaymentMethodId());
 
             transaction = transactionService.createTransaction(
-                    buildTransactionalEntity(paymentEntity, wallet, request));
+                    paymentEntity,
+                    wallet,
+                    UUID.fromString(request.getUserUid()),
+                    request.getAmount(),
+                    request.getType());
 
             topUp = topUpRepository.save(TopUpEntity
                     .builder()
                     .createdAt(LocalDateTime.now())
                     .paymentRequest(paymentEntity)
+                    .provider(request.getProvider())
                     .build());
 
             wallet.setBalance(wallet.getBalance().add(request.getAmount()));
-            walletRepository.updateBalance(wallet.getUid(),
+            walletService.updateBalance(wallet.getUid(),
                     wallet.getBalance(),
                     wallet.getUserUid());
 
@@ -94,23 +92,6 @@ public class TopUpService {
     public void hardDeleteById(UUID topUpUid) {
         topUpRepository.forceDelete(topUpUid);
     }
-
-    private TransactionalEntity buildTransactionalEntity(PaymentEntity paymentEntityFrom,
-                                                         WalletEntity walletFrom,
-                                                         TopUpRequestDto request) {
-        return TransactionalEntity
-                .builder()
-                .createdAt(LocalDateTime.now())
-                .paymentRequest(paymentEntityFrom)
-                .type(TypeTransaction.valueOf(request.getType()))
-                .state(TransactionState.valueOf(request.getState()))
-                .amount(request.getAmount())
-                .userUid(UUID.fromString(request.getUserUid()))
-                .walletName(walletFrom.getName())
-                .wallet(walletFrom)
-                .build();
-    }
-
 
 
 }

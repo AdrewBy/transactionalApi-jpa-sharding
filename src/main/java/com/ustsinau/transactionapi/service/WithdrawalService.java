@@ -7,8 +7,6 @@ import com.ustsinau.transactionapi.entity.PaymentEntity;
 import com.ustsinau.transactionapi.entity.TransactionalEntity;
 import com.ustsinau.transactionapi.entity.WalletEntity;
 import com.ustsinau.transactionapi.entity.WithdrawalEntity;
-import com.ustsinau.transactionapi.enums.TransactionState;
-import com.ustsinau.transactionapi.enums.TypeTransaction;
 import com.ustsinau.transactionapi.exception.InsufficientFundsException;
 import com.ustsinau.transactionapi.exception.TransferFailedException;
 import com.ustsinau.transactionapi.mappers.TransactionalMapper;
@@ -30,15 +28,10 @@ import java.util.UUID;
 public class WithdrawalService {
 
     private final WithdrawRepository withdrawRepository;
-
     private final WalletService walletService;
-
     private final PaymentService paymentService;
-
     private final TransactionService transactionService;
-
     private final TransactionalMapper transactionalMapper;
-
     private final CompensationWithdrawService compensateWithdrawal;
 
 
@@ -66,7 +59,11 @@ public class WithdrawalService {
                     request.getPaymentMethodId());
 
             transaction = transactionService.createTransaction(
-                    buildTransactionalEntity(paymentEntity, wallet, request));
+                    paymentEntity,
+                    wallet,
+                    UUID.fromString(request.getUserUid()),
+                    request.getAmount(),
+                    request.getType());
 
             withdrawal = withdrawRepository.save(WithdrawalEntity
                     .builder()
@@ -103,24 +100,9 @@ public class WithdrawalService {
 
     }
 
-    public void hardDeleteById(UUID withdrawUid){
+    public void hardDeleteById(UUID withdrawUid) {
         withdrawRepository.forceDelete(withdrawUid);
     }
 
-    private TransactionalEntity buildTransactionalEntity(PaymentEntity paymentEntityFrom,
-                                                         WalletEntity walletFrom,
-                                                         WithdrawalRequestDto request) {
-        return TransactionalEntity
-                .builder()
-                .createdAt(LocalDateTime.now())
-                .paymentRequest(paymentEntityFrom)
-                .type(TypeTransaction.valueOf(request.getType()))
-                .state(TransactionState.valueOf(request.getState()))
-                .amount(request.getAmount())
-                .userUid(UUID.fromString(request.getUserUid()))
-                .walletName(walletFrom.getName())
-                .wallet(walletFrom)
-                .build();
-    }
 
 }

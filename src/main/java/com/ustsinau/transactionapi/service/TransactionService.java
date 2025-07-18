@@ -4,6 +4,8 @@ import com.ustsinau.transactionapi.dto.TransactionalDto;
 import com.ustsinau.transactionapi.dto.response.TransactionResponse;
 import com.ustsinau.transactionapi.dto.response.TransactionStatusResponse;
 import com.ustsinau.transactionapi.entity.*;
+import com.ustsinau.transactionapi.enums.TransactionState;
+import com.ustsinau.transactionapi.enums.TypeTransaction;
 import com.ustsinau.transactionapi.exception.TransactionNotFoundException;
 import com.ustsinau.transactionapi.mappers.TransactionalMapper;
 import com.ustsinau.transactionapi.repository.TransactionRepository;
@@ -14,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -44,8 +47,45 @@ public class TransactionService {
     }
 
     @Transactional
-    public TransactionalEntity createTransaction(TransactionalEntity entity) {
-        return transactionRepository.save(entity);
+    public TransactionalEntity createTransaction(PaymentEntity paymentEntityFrom,
+                                                 WalletEntity wallet,
+                                                 UUID getUserUid,
+                                                 BigDecimal amount,
+                                                 String type){
+        return transactionRepository.save( TransactionalEntity
+                .builder()
+                .createdAt(LocalDateTime.now())
+                .paymentRequest(paymentEntityFrom)
+                .type(TypeTransaction.valueOf(type))
+                .state(TransactionState.PENDING)
+                .amount(amount)
+                .userUid(getUserUid)
+                .walletName(wallet.getName())
+                .wallet(wallet)
+                .build());
+    }
+
+    public TransactionalEntity createTransactionEntityWithoutSave(PaymentEntity paymentEntityFrom,
+                                                                  WalletEntity wallet,
+                                                                  UUID getUserUid,
+                                                                  BigDecimal amount,
+                                                                  String type){
+        return TransactionalEntity
+                .builder()
+                .createdAt(LocalDateTime.now())
+                .paymentRequest(paymentEntityFrom)
+                .type(TypeTransaction.valueOf(type))
+                .state(TransactionState.PENDING)
+                .amount(amount)
+                .userUid(getUserUid)
+                .walletName(wallet.getName())
+                .wallet(wallet)
+                .build();
+    }
+
+    @Transactional
+    public void save(TransactionalEntity transactionFrom) {
+        transactionRepository.save(transactionFrom);
     }
 
     @Transactional

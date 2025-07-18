@@ -30,6 +30,11 @@ public class AppExceptionHandler {
         return buildErrorResponse(ex, HttpStatus.NOT_FOUND);
 
     }
+    @ExceptionHandler(WalletTypeException.class)
+    public ResponseEntity<Object> handleWalletTypeException(WalletTypeException ex) {
+        return buildErrorResponse(ex, HttpStatus.NOT_FOUND);
+
+    }
 
     @ExceptionHandler(PaymentNotFoundException.class)
     public ResponseEntity<Object> handlePaymentNotFoundException(PaymentNotFoundException ex) {

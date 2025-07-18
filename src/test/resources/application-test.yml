@@ -1,8 +1,9 @@
 
 spring:
+
   datasource:
     driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
-    url: jdbc:shardingsphere:classpath:config-sharding-rules.yaml
+    url: jdbc:shardingsphere:classpath:sharding-test.yaml
     hikari:
       connection-timeout: 30000
       initialization-fail-timeout: 60000
@@ -17,19 +18,45 @@ spring:
       hibernate.format_sql: true
 
   flyway:
-    enabled: false
+    enabled: true
 
 flyway:
   dataSources:
-    - url: jdbc:postgresql://localhost:${db0.port}/ds0
+    - url: jdbc:postgresql://localhost:15432/ds0
       username: postgres
       password: postgres
-    - url: jdbc:postgresql://localhost:${db1.port}/ds1
+    - url: jdbc:postgresql://localhost:15433/ds1
       username: postgres
       password: postgres
-    - url: jdbc:postgresql://localhost:${db2.port}/ds2
+    - url: jdbc:postgresql://localhost:15434/ds2
       username: postgres
       password: postgres
-    - url: jdbc:postgresql://localhost:${db3.port}/ds3
+    - url: jdbc:postgresql://localhost:15435/ds3
       username: postgres
       password: postgres
+
+#flyway:
+#  dataSources:
+#    - url: jdbc:postgresql://localhost:${db0.port}/ds0
+#      username: postgres
+#      password: postgres
+#    - url: jdbc:postgresql://localhost:${db1.port}/ds1
+#      username: postgres
+#      password: postgres
+#    - url: jdbc:postgresql://localhost:${db2.port}/ds2
+#      username: postgres
+#      password: postgres
+#    - url: jdbc:postgresql://localhost:${db3.port}/ds3
+#      username: postgres
+#      password: postgres
+
+logging:
+  level:
+    org.apache.shardingsphere.sql: TRACE
+    org.apache.shardingsphere: TRACE
+    com.arjuna.ats: DEBUG
+    org.apache.shardingsphere.transaction: DEBUG
+    com.ustsinau: TRACE
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

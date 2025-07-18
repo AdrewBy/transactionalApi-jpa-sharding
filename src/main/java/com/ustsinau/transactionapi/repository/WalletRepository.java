@@ -2,6 +2,7 @@ package com.ustsinau.transactionapi.repository;
 
 
 import com.ustsinau.transactionapi.entity.WalletEntity;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -15,6 +16,8 @@ import java.util.UUID;
 @Repository
 public interface WalletRepository extends JpaRepository<WalletEntity, UUID> {
 
+  //  @Query("SELECT w FROM WalletEntity w JOIN FETCH w.walletType WHERE w.userUid = :uid")
+    //   @EntityGraph(attributePaths = {"walletType"})
     List<WalletEntity> findByUserUid(UUID uid);
 
     @Query("SELECT w FROM WalletEntity w " +
@@ -32,4 +35,8 @@ public interface WalletRepository extends JpaRepository<WalletEntity, UUID> {
     void updateBalance(@Param("uid") UUID uid,
                        @Param("balance") BigDecimal balance,
                        @Param("userUid") UUID userUid);
+
+
+    boolean existsByNameAndUserUid(String name, UUID userUid);
+
 }

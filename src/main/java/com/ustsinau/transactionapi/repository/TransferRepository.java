@@ -12,6 +12,5 @@ public interface TransferRepository extends JpaRepository<TransferEntity, UUID>{
 
     @Modifying
     @Query("DELETE FROM TransferEntity t WHERE t.uid = :uid")
-    void forceDelete(@Param("uid") UUID uid);
-
+    void hardDeleteById(UUID uid);
 }

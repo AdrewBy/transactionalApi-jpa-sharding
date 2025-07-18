@@ -1,6 +1,7 @@
 package com.ustsinau.transactionapi.service.compensation;
 
 
+import com.ustsinau.transactionapi.repository.WithdrawRepository;
 import com.ustsinau.transactionapi.service.PaymentService;
 import com.ustsinau.transactionapi.service.TransactionService;
 import com.ustsinau.transactionapi.service.WalletService;
@@ -19,7 +20,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class CompensationWithdrawService {
-    private final WithdrawalService withdrawService;
+
+    private final WithdrawRepository withdrawRepository;
     private final TransactionService transactionService;
     private final PaymentService paymentService;
     private final WalletService walletService;
@@ -36,7 +38,7 @@ public class CompensationWithdrawService {
     ) {
         try {
             if (withdrawalUid != null) {
-                withdrawService.hardDeleteById(withdrawalUid);
+                withdrawRepository.forceDelete(withdrawalUid);
                 log.info("Withdraw {} was force-deleted", withdrawalUid);
             }
 

@@ -15,15 +15,10 @@ import java.time.LocalDateTime;
 public class WithdrawalRequestDto {
 
     private String userUid;
-
     private String walletUid;
-
     private BigDecimal amount;
-
     private String type;
-
     private String state;
-
 
     private String comment;
 

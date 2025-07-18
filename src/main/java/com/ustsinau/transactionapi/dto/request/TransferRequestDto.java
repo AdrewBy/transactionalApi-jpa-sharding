@@ -15,22 +15,15 @@ import java.util.UUID;
 @NoArgsConstructor
 public class TransferRequestDto {
 
-    private String userUid;
-
+    private String userUidFrom;
     private String walletUidFrom;
-
+    private String userUidTo;
     private String walletUidTo;
-
     private BigDecimal amount;
-
+    private String comment;
     private String type;
 
-    private String state;
-
-    private String comment;
-
     private Long PaymentMethodId;
-
 
     private String systemRate;
 

@@ -1,6 +1,7 @@
 package com.ustsinau.transactionapi.entity;
 
 
+import com.ustsinau.transactionapi.enums.PaymentStatus;
 import com.ustsinau.transactionapi.enums.TransactionState;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -18,7 +19,7 @@ import java.util.UUID;
 @Builder(toBuilder = true)
 @Entity
 @Table(name = "payment_requests")
-public class PaymentEntity {
+public class PaymentEntity  implements EntityWithStatus<PaymentStatus> {
 
     @Id
     @GeneratedValue
@@ -41,7 +42,7 @@ public class PaymentEntity {
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
-    private TransactionState status;
+    private PaymentStatus status;
 
     @Column(length = 256, nullable = true)
     private String comment;
@@ -49,5 +50,20 @@ public class PaymentEntity {
     @Column(name = "payment_method_id")
     private Long paymentMethodId;
 
+    @PrePersist
+    public void onInsert() {
+        createdAt = LocalDateTime.now();
+        modifiedAt = createdAt;
+    }
+
+    @PreUpdate
+    public void onUpdate() {
+        modifiedAt = LocalDateTime.now();
+    }
+
+    @Override
+    public void setStatus(PaymentStatus status) {
+        this.status = status;
+    }
 
 }

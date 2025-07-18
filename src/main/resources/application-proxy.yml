@@ -28,7 +28,6 @@ spring:
   flyway:
     enabled: false
 
-
 flyway:
   dataSources:
     - url: jdbc:postgresql://db0:5416/ds0

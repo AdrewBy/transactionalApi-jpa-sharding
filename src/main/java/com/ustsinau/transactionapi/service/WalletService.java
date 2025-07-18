@@ -32,8 +32,7 @@ public class WalletService {
     private final WalletMapper walletMapper;
     private final WalletTypeService walletTypeService;
 
-
-
+    @Transactional(readOnly = true)
     public WalletEntity getById(UUID uuid) {
         return walletRepository.findById(uuid)
                 .orElseThrow(() -> new WalletNotFoundException("Wallet not found with UID: " + uuid, "WALLET_NOT_FOUND"));
@@ -56,6 +55,10 @@ public class WalletService {
     @Transactional
     public WalletEntity createWallet(WalletCreateRequestDto request) {
         WalletTypeEntity walletType = walletTypeService.getWalletTypeById(request.getWalletTypeUid());
+
+        if (walletRepository.existsByNameAndUserUid(request.getName(), request.getUserUid())) {
+            throw new WalletNotFoundException("Wallet already exists in BD with this name: " + request.getName(), "DUPLICATE_NAME");
+        }
         log.info("Creating wallet with request: {}", request);
 
         return walletRepository.save(WalletEntity.builder()
@@ -103,7 +106,7 @@ public class WalletService {
         WalletEntity originalWalletCopy = new WalletEntity();
         BeanUtils.copyProperties(oldWallet, originalWalletCopy);
 
-        oldWallet.setStatus(Status.DELETED);
+        oldWallet.setStatus(Status.ARCHIVED);
 
         return walletMapper.map(walletRepository.save(oldWallet));
 

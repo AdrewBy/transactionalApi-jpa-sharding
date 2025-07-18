@@ -1,5 +1,6 @@
 package com.ustsinau.transactionapi.service.compensation;
 
+import com.ustsinau.transactionapi.repository.TopUpRepository;
 import com.ustsinau.transactionapi.service.PaymentService;
 import com.ustsinau.transactionapi.service.TopUpService;
 import com.ustsinau.transactionapi.service.TransactionService;
@@ -20,7 +21,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CompensationTopUpService {
 
-    private final TopUpService topUpService;
+    private final TopUpRepository topUpRepository;
+
     private final TransactionService transactionService;
     private final PaymentService paymentService;
     private final WalletService walletService;
@@ -37,7 +39,7 @@ public class CompensationTopUpService {
     ) {
         try {
             if (topUpUid != null) {
-                topUpService.hardDeleteById(topUpUid);
+                topUpRepository.forceDelete(topUpUid);
                 log.info("TopUp {} was force-deleted", topUpUid);
             }
 

@@ -12,6 +12,7 @@ public class WalletResponse {
     private String uid;
     private String name;
     private String walletTypeUid;
+    //  private WalletTypeEntity walletType;
     private String userUid;
     private String status;
     private BigDecimal balance;

@@ -13,7 +13,6 @@ import java.util.UUID;
 @NoArgsConstructor
 public class WalletCreateRequestDto {
 
-
     private String name;
 
     private UUID userUid;

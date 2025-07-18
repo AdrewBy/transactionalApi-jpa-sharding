@@ -20,7 +20,6 @@ import java.util.UUID;
 @Table(name = "top_up_requests")
 public class TopUpEntity {
 
-
     @Id
     @GeneratedValue(generator = "UUID")
     @Column(name = "uid", updatable = false, nullable = false)

@@ -97,13 +97,13 @@ rules:
         type: CLASS_BASED
         props:
           strategy: STANDARD
-          algorithmClassName: com.ustsinau.transactionapi.shardingAlgorithm.UUIDHashModShardingAlgorithm
+          algorithmClassName: com.ustsinau.transactionapi.config.shardingAlgorithm.UUIDHashModShardingAlgorithm
 
       payment-hash-mod:
         type: CLASS_BASED
         props:
           strategy: STANDARD
-          algorithmClassName: com.ustsinau.transactionapi.shardingAlgorithm.UserIdByPaymentShardingAlgorithm
+          algorithmClassName: com.ustsinau.transactionapi.config.shardingAlgorithm.UserIdByPaymentShardingAlgorithm
 
 
 #      payment-hash-mod:
