@@ -50,6 +50,12 @@ public class WalletTypeService {
                 .orElseThrow(() -> new WalletNotFoundException("WalletType not found with ID: " + uid, "WALLET_NOT_FOUND"));
     }
 
+    public WalletTypeEntity getWalletTypeByName(String name) {
+        WalletTypeEntity walletType = walletTypeRepository.findByName(name);
+        log.info("Found wallet type: {}", walletType);
+        return walletType;
+     }
+
     @Transactional
     public WalletTypeEntity updateWalletType(WalletTypeDto request) {
 

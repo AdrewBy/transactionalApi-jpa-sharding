@@ -12,7 +12,6 @@ import com.ustsinau.transactionapi.enums.TypeTransaction;
 import com.ustsinau.transactionapi.exception.TransferFailedException;
 import com.ustsinau.transactionapi.mappers.TransactionalMapper;
 import com.ustsinau.transactionapi.repository.TopUpRepository;
-import com.ustsinau.transactionapi.repository.WalletRepository;
 import com.ustsinau.transactionapi.service.compensation.CompensationTopUpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +28,6 @@ import java.util.UUID;
 public class TopUpService {
 
     private final TopUpRepository topUpRepository;
-    private final WalletRepository walletRepository;
 
     private final PaymentService paymentService;
     private final TransactionService transactionService;
@@ -66,7 +64,7 @@ public class TopUpService {
                     .build());
 
             wallet.setBalance(wallet.getBalance().add(request.getAmount()));
-            walletRepository.updateBalance(wallet.getUid(),
+            walletService.updateBalance(wallet.getUid(),
                     wallet.getBalance(),
                     wallet.getUserUid());
 

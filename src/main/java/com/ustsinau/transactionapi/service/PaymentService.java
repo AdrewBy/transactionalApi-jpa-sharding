@@ -4,6 +4,7 @@ package com.ustsinau.transactionapi.service;
 import com.ustsinau.transactionapi.entity.PaymentEntity;
 import com.ustsinau.transactionapi.enums.TransactionState;
 import com.ustsinau.transactionapi.entity.WalletEntity;
+import com.ustsinau.transactionapi.exception.PaymentNotFoundException;
 import com.ustsinau.transactionapi.exception.WalletNotFoundException;
 import com.ustsinau.transactionapi.repository.PaymentRequestRepository;
 import com.ustsinau.transactionapi.repository.WalletRepository;
@@ -53,4 +54,11 @@ public class PaymentService {
     public void hardDeleteById(UUID uid) {
         paymentRequestRepository.forceDelete(uid);
     }
+
+    public PaymentEntity  getById(UUID paymentUid) {
+        return paymentRequestRepository.findById(paymentUid).orElseThrow(() ->
+                new PaymentNotFoundException("Payment not found by id: " + paymentUid, "PAYMENT_NOT_FOUND")
+        );
+    }
+
 }

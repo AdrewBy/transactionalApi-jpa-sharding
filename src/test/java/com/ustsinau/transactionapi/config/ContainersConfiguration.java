@@ -96,13 +96,13 @@ public class ContainersConfiguration {
                 yaml.append("    username: ").append(container.getUsername()).append("\n");
                 yaml.append("    password: ").append(container.getPassword()).append("\n");}
 
-            // 🔧 Добавляем часть с rules
+            //  Добавляем часть с rules
             InputStream rulesStream = new ClassPathResource("config-sharding-rules.yaml").getInputStream();
             String rules = new String(rulesStream.readAllBytes());
 
             yaml.append("\n").append(rules);
 
-            // 🗂️ Создаем временный yaml
+            // Создаем временный yaml
             Path tempFile = Files.createTempFile("sharding-config-", ".yaml");
             Files.writeString(tempFile, yaml.toString());
 
@@ -111,7 +111,7 @@ public class ContainersConfiguration {
             try {
                 return YamlShardingSphereDataSourceFactory.createDataSource(tempFile.toFile());
             } catch (Exception ex) {
-                log.error("🔥 Ошибка при создании ShardingSphere DataSource: {}", ex.getMessage(), ex);
+                log.error("Ошибка при создании ShardingSphere DataSource: {}", ex.getMessage(), ex);
                 throw new RuntimeException("Failed to create ShardingSphere DataSource", ex);
             }
         } catch (Exception e) {

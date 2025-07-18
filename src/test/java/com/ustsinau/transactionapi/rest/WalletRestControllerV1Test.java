@@ -82,6 +82,7 @@ public class WalletRestControllerV1Test {
     @Test
     void testCreate_Wallet_Success() {
 
+
         mockMvc.perform(post("/user/create-wallet")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(JsonUtils.readJsonFromFile("src/test/resources/json/create_wallet.json")))

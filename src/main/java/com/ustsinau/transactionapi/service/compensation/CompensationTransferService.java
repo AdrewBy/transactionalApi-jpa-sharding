@@ -1,5 +1,6 @@
 package com.ustsinau.transactionapi.service.compensation;
 
+import com.ustsinau.transactionapi.repository.TransferRepository;
 import com.ustsinau.transactionapi.service.PaymentService;
 import com.ustsinau.transactionapi.service.TransactionService;
 import com.ustsinau.transactionapi.service.TransferService;
@@ -19,7 +20,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CompensationTransferService {
 
-    private final TransferService transferService;
+    private final TransferRepository transferRepository;
     private final TransactionService transactionService;
     private final PaymentService paymentService;
     private final WalletService walletService;
@@ -40,7 +41,8 @@ public class CompensationTransferService {
         try {
 
             if (transferUid != null) {
-                transferService.hardDeleteById(transferUid);  // Явное удаление
+                transferRepository.forceDelete(transferUid);
+     //           transferService.hardDeleteById(transferUid);  // Явное удаление
                 log.info("Transfer UID {} was force-deleted, transfer failed.", transferUid);
             }
             if (transactionUid != null) {
