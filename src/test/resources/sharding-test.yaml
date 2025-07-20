@@ -2,28 +2,25 @@ dataSources:
   ds0:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://localhost:15432/ds0
+    url: jdbc:postgresql://localhost:${CONTAINERS[0].getMappedPort(5432)}/ds0
     username: postgres
     password: postgres
-
   ds1:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://localhost:15433/ds1
+    url: jdbc:postgresql://localhost:${CONTAINERS[1].getMappedPort(5432)}/ds1
     username: postgres
     password: postgres
-
   ds2:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://localhost:15434/ds2
+    url: jdbc:postgresql://localhost:${CONTAINERS[2].getMappedPort(5432)}/ds2
     username: postgres
     password: postgres
-
   ds3:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://localhost:15435/ds3
+    url: jdbc:postgresql://localhost:${CONTAINERS[3].getMappedPort(5432)}/ds3
     username: postgres
     password: postgres
 

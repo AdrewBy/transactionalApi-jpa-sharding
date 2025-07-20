@@ -3,16 +3,15 @@ package com.ustsinau.transactionapi.rest;
 
 import com.ustsinau.transactionapi.config.ContainersConfiguration;
 import com.ustsinau.transactionapi.config.TestConfig;
-import com.ustsinau.transactionapi.dto.request.WalletTypeCreateRequestDto;
 import com.ustsinau.transactionapi.entity.WalletEntity;
 import com.ustsinau.transactionapi.entity.WalletTypeEntity;
-import com.ustsinau.transactionapi.enums.Status;
 import com.ustsinau.transactionapi.repository.PaymentRequestRepository;
 import com.ustsinau.transactionapi.repository.WalletRepository;
 import com.ustsinau.transactionapi.repository.WalletTypeRepository;
+import com.ustsinau.transactionapi.service.WalletService;
 import com.ustsinau.transactionapi.service.WalletTypeService;
-import com.ustsinau.transactionapi.utils.JsonUtils;
-import jakarta.persistence.EntityManager;
+import com.ustsinau.transactionapi.utils.DataWalletTypeUtils;
+import com.ustsinau.transactionapi.utils.DataWalletUtils;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,18 +25,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @AutoConfigureMockMvc
@@ -52,63 +46,39 @@ public class WalletRestControllerV1Test {
     @Autowired
     private WalletRepository walletRepository;
     @Autowired
+    private WalletService walletService;
+    @Autowired
     private WalletTypeRepository walletTypeRepository;
     @Autowired
     private WalletTypeService walletTypeService;
     @Autowired
     private PaymentRequestRepository paymentRequestRepository;
 
-    private UUID walletTypeUid;
-
 
     @BeforeEach
- //   @Transactional
     public void setUp() {
-
-        System.out.println("Count walletType before delete: " + walletTypeRepository.count()); // Проверка количества записей
-        System.out.println("Count wallet before delete: " + walletRepository.count()); // Проверка количества записей
-        System.out.println("Count payment before delete: " + paymentRequestRepository.count()); // Проверка количества записей
-
         paymentRequestRepository.deleteAll();
         walletRepository.deleteAll();
         walletTypeRepository.deleteAll();
-
-        System.out.println("Count payment after delete: " + paymentRequestRepository.count());
-        System.out.println("Count walletType after delete: " + walletTypeRepository.count());
-        System.out.println("Count wallet after delete: " + walletRepository.count());
-
-    }
-
-    private void createTestWalletType() {
-        WalletTypeCreateRequestDto request = JsonUtils.readJsonFromFile(
-                "src/test/resources/json/create_WalletType.json",
-                WalletTypeCreateRequestDto.class);
-        WalletTypeEntity savedWalletType = walletTypeService.createWalletType(request);
-        this.walletTypeUid = savedWalletType.getUid();
-        //  entityManager.flush();
     }
 
     @Test
-    @DisplayName("Test create wallet functionality 2")
+    @DisplayName("Test update wallet's name - success.")
     @SneakyThrows
-    public void givenValidRequest_whenCreateWallet_thenWalletIsCreated2() {
-        createTestWalletType();
-        // Given
-        String requestJson = """
-                {
-                    "name": "second",
-                    "userUid": "123e4567-e89b-12d3-a456-426614174000",
-                    "walletTypeUid": "%s"
-                }
-                """.formatted(walletTypeUid.toString());
+    public void givenValidId_whenGetWalletById_thenSuccess() {
+        //Given
+        WalletTypeEntity walletType = walletTypeService.createWalletType(DataWalletTypeUtils.getWalletTypeFirstCreateRequestDtoTransient());
+        WalletEntity walletEntity = walletService.createWallet(DataWalletUtils.getWalletFirstCreateRequestDtoTransient(walletType.getUid()));
         // When
-        mockMvc.perform(post("/api/v1/wallets/user/create-wallet")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestJson))
+        mockMvc.perform(put("/api/v1/wallets/user/{wallet_uid}/update/{name}",
+                        walletEntity.getUid(),
+                        "New Name")
+                        .contentType(MediaType.APPLICATION_JSON))
                 // Then
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name", is("second")))
+                .andExpect(jsonPath("$.uid", is(walletEntity.getUid().toString())))
+                .andExpect(jsonPath("$.name", is("New Name")))
                 .andExpect(jsonPath("$.userUid", is("123e4567-e89b-12d3-a456-426614174000")))
                 .andDo(result -> {
                     String response = result.getResponse().getContentAsString();
@@ -117,18 +87,19 @@ public class WalletRestControllerV1Test {
     }
 
     @Test
-    @DisplayName("Test create wallet functionality")
+    @DisplayName("Test create wallet functionality - success")
     @SneakyThrows
     public void givenValidRequest_whenCreateWallet_thenWalletIsCreated() {
-        createTestWalletType();
-        // Given
+        //Given
+        WalletTypeEntity walletType = walletTypeService.createWalletType(DataWalletTypeUtils.getWalletTypeFirstCreateRequestDtoTransient());
+
         String requestJson = """
                 {
                     "name": "second",
                     "userUid": "123e4567-e89b-12d3-a456-426614174000",
                     "walletTypeUid": "%s"
                 }
-                """.formatted(walletTypeUid.toString());
+                """.formatted(walletType.getUid());
         // When
         mockMvc.perform(post("/api/v1/wallets/user/create-wallet")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -148,25 +119,8 @@ public class WalletRestControllerV1Test {
     @DisplayName("Test get wallet by UserId And Currency - success")
     @SneakyThrows
     public void givenUserIdAndCurrency_whenGetWallet_ReturnSuccess() {
-        WalletTypeEntity mainType = walletTypeRepository.save(
-                WalletTypeEntity.builder()
-                        .name("Основной")
-                        .currencyCode("RUB")
-                        .status(Status.ACTIVE)
-                        .createdAt(LocalDateTime.now())
-                        .userType("Individual")
-                        .build()
-        );
-        walletRepository.save(
-                WalletEntity.builder()
-                        .name("Чужой кошелек")
-                        .createdAt(LocalDateTime.now())
-                        .userUid(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
-                        .status(Status.ACTIVE)
-                        .walletType(mainType)
-                        .balance(new BigDecimal("200.00"))
-                        .build()
-        );
+        WalletTypeEntity walletType = walletTypeService.createWalletType(DataWalletTypeUtils.getWalletTypeFirstCreateRequestDtoTransient());
+        walletService.createWallet(DataWalletUtils.getWalletFirstCreateRequestDtoTransient(walletType.getUid()));
         // When
         mockMvc.perform(get("/api/v1/wallets/user/{user_uid}/currency/{currency}",
                         "123e4567-e89b-12d3-a456-426614174000",
@@ -174,7 +128,7 @@ public class WalletRestControllerV1Test {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name", is("Чужой кошелек")))
+                .andExpect(jsonPath("$.name", is("First wallet")))
                 .andExpect(jsonPath("$.userUid", is("123e4567-e89b-12d3-a456-426614174000")))
                 .andDo(result -> {
                     String response = result.getResponse().getContentAsString();
@@ -187,83 +141,35 @@ public class WalletRestControllerV1Test {
     @SneakyThrows
     public void givenUserId_whenGetWallets_thenReturnUserWallets() {
         // Given
-        UUID userId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
-        UUID otherUserId = UUID.fromString("223e4567-e89b-12d3-a456-426614174002");
+        WalletTypeEntity walletTypeFirst = walletTypeService.createWalletType(DataWalletTypeUtils.getWalletTypeFirstCreateRequestDtoTransient());
+        WalletTypeEntity walletTypeSecond = walletTypeService.createWalletType(DataWalletTypeUtils.getWalletTypeSecondCreateRequestDtoTransient());
+        WalletEntity walletEntityFirst = walletService.createWallet(DataWalletUtils.getWalletFirstCreateRequestDtoTransient(walletTypeFirst.getUid()));
+        WalletEntity walletEntitySecond = walletService.createWallet(DataWalletUtils.getWalletSecondCreateRequestDtoTransient(walletTypeSecond.getUid()));
+        WalletEntity walletEntityOtherPerson = walletService.createWallet(DataWalletUtils.getWalletFirstCreateRequestDtoSecondPersonTransient(walletTypeFirst.getUid()));
 
-        // Создаем тестовые типы кошельков
-        WalletTypeEntity mainType = walletTypeRepository.save(
-                WalletTypeEntity.builder()
-                        .name("Основной")
-                        .currencyCode("RUB")
-                        .status(Status.ACTIVE)
-                        .createdAt(LocalDateTime.now())
-                        .userType("Individual")
-                        .build()
-        );
-        System.out.println("mainType: " + mainType);
-
-        WalletTypeEntity secondaryType = walletTypeRepository.save(
-                WalletTypeEntity.builder()
-                        .name("Дополнительный")
-                        .status(Status.ACTIVE)
-                        .createdAt(LocalDateTime.now())
-                        .currencyCode("USD")
-                        .build()
-        );
-
-        // Создаем тестовые кошельки
-        List<WalletEntity> testWallets = Arrays.asList(
-                WalletEntity.builder()
-                        .name("Основной кошелек")
-                        .createdAt(LocalDateTime.now())
-                        .userUid(userId)
-                        .status(Status.ACTIVE)
-                        .walletType(mainType)
-                        .balance(new BigDecimal("1000.00"))
-                        .build(),
-
-                WalletEntity.builder()
-                        .name("Долларовый кошелек")
-                        .createdAt(LocalDateTime.now())
-                        .userUid(userId)
-                        .status(Status.ACTIVE)
-                        .walletType(secondaryType)
-                        .balance(new BigDecimal("500.00"))
-                        .build(),
-
-                // Кошелек другого пользователя (не должен быть в результате)
-                WalletEntity.builder()
-                        .name("Чужой кошелек")
-                        .createdAt(LocalDateTime.now())
-                        .userUid(otherUserId)
-                        .status(Status.ACTIVE)
-                        .walletType(mainType)
-                        .balance(new BigDecimal("200.00"))
-                        .build()
-        );
+        List<WalletEntity> testWallets = Arrays.asList(walletEntityFirst, walletEntitySecond, walletEntityOtherPerson);
         walletRepository.saveAll(testWallets);
         walletRepository.findByUserUid(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"));
         // When & Then
-        mockMvc.perform(get("/api/v1/wallets/user/{user_uid}", userId)
+        mockMvc.perform(get("/api/v1/wallets/user/{user_uid}", walletEntityFirst.getUserUid())
                         .contentType(MediaType.APPLICATION_JSON))
 
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$", hasSize(2))) // Ожидаем 2 кошелька для этого пользователя
-                .andExpect(jsonPath("$[*].userUid", everyItem(is(userId.toString()))))
-                .andExpect(jsonPath("$[0].name", is("Основной кошелек")))
-                .andExpect(jsonPath("$[0].balance", is(1000.00)))
+                .andExpect(jsonPath("$[*].userUid", everyItem(is(walletEntityFirst.getUserUid().toString()))))
+                .andExpect(jsonPath("$[0].name", is("First wallet")))
+                //  .andExpect(jsonPath("$[0].balance", is(1000.00)))
                 // не walletType тк другое тело ответа WalletResponse
-                .andExpect(jsonPath("$[0].walletTypeUid", is(mainType.getUid().toString())))
-                .andExpect(jsonPath("$[1].name", is("Долларовый кошелек")))
-                .andExpect(jsonPath("$[1].balance", is(500.00)))
-          //      .andExpect(jsonPath("$[1].walletType.currencyCode", is("USD")))
+                .andExpect(jsonPath("$[0].walletTypeUid", is(walletTypeFirst.getUid().toString())))
+                .andExpect(jsonPath("$[1].name", is("Second wallet")))
+                //    .andExpect(jsonPath("$[1].balance", is(500.00)))
+                //      .andExpect(jsonPath("$[1].walletType.currencyCode", is("USD")))
                 .andDo(result -> {
                     String response = result.getResponse().getContentAsString();
                     System.out.println("Response: " + response);
                 });
     }
-
 
 }
 

@@ -18,22 +18,22 @@ spring:
       hibernate.format_sql: true
 
   flyway:
-    enabled: true
+    enabled: false
 
-flyway:
-  dataSources:
-    - url: jdbc:postgresql://localhost:15432/ds0
-      username: postgres
-      password: postgres
-    - url: jdbc:postgresql://localhost:15433/ds1
-      username: postgres
-      password: postgres
-    - url: jdbc:postgresql://localhost:15434/ds2
-      username: postgres
-      password: postgres
-    - url: jdbc:postgresql://localhost:15435/ds3
-      username: postgres
-      password: postgres
+#flyway:
+#  dataSources:
+#    - url: jdbc:postgresql://localhost:15432/ds0
+#      username: postgres
+#      password: postgres
+#    - url: jdbc:postgresql://localhost:15433/ds1
+#      username: postgres
+#      password: postgres
+#    - url: jdbc:postgresql://localhost:15434/ds2
+#      username: postgres
+#      password: postgres
+#    - url: jdbc:postgresql://localhost:15435/ds3
+#      username: postgres
+#      password: postgres
 
 #flyway:
 #  dataSources:

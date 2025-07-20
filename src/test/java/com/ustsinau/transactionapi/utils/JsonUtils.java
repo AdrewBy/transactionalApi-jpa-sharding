@@ -19,6 +19,14 @@ public class JsonUtils {
         }
     }
 
+    public static <T> T readJsonFromString(String string, Class<T> clazz)  {
+        try {
+            return objectMapper.readValue(string, clazz);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static String readJsonFromFile(String path) {
         try {
             // Чтение содержимого файла как строки

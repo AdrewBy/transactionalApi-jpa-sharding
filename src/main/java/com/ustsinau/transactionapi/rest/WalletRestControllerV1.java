@@ -42,9 +42,10 @@ public class WalletRestControllerV1 {
         return walletMapper.map(walletService.createWallet(request));
     }
 
-    @PostMapping("/user/update/")
-    public WalletDto updateWallet(@RequestBody WalletDto request) {
-        return walletService.updateWallet(request);
+    @PutMapping("/user/{wallet_uid}/update/{name}")
+    public ResponseEntity<WalletResponse> updateWalletName(@PathVariable String wallet_uid, @PathVariable String name) {
+        WalletResponse wallet = walletService.updateWalletName(wallet_uid, name);
+        return ResponseEntity.ok(wallet);
     }
 
     @DeleteMapping("/user/soft-delete/{wallet_uid}")

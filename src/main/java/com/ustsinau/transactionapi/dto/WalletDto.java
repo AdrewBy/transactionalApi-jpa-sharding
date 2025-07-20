@@ -16,21 +16,13 @@ import java.time.LocalDateTime;
 public class WalletDto {
 
     private String uid;
-
     private LocalDateTime createdAt;
-
     private LocalDateTime modifiedAt;
-
     private String name;
-
     private WalletTypeDto walletType;
-
     private String userUid;
-
     private String status;
-
     private BigDecimal balance;
-
     private LocalDateTime archivedAt;
 
 

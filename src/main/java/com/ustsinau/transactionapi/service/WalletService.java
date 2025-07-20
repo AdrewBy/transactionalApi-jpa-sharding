@@ -76,25 +76,16 @@ public class WalletService {
         walletRepository.updateBalance(uid, balance, userUid);
     }
 
-    public WalletDto updateWallet(WalletDto request) {
+    public WalletResponse updateWalletName(String uid, String newName) {
+        WalletEntity oldWallet = walletRepository.findById(UUID.fromString(uid))
+                .orElseThrow(() -> new WalletNotFoundException("Wallet not found with ID: " + uid, "WALLET_NOT_FOUND"));
 
-        WalletEntity oldWallet = walletRepository.findById(UUID.fromString(request.getUid()))
-                .orElseThrow(() -> new WalletNotFoundException("Wallet not found with ID: " + request.getUid(), "WALLET_NOT_FOUND"));
-
-        WalletEntity originalWalletCopy = new WalletEntity();
-        BeanUtils.copyProperties(oldWallet, originalWalletCopy);
-
-        if (request.getName() != null) {
-            oldWallet.setName(request.getName());
+        if (walletRepository.existsByNameAndUserUid(newName, oldWallet.getUserUid())) {
+            throw new WalletNotFoundException("Wallet already exists in BD with this name: " + newName, "DUPLICATE_NAME");
         }
-        if (request.getStatus() != null) {
-            oldWallet.setStatus(Status.valueOf(request.getStatus()));
-        }
-
+        oldWallet.setName(newName);
         oldWallet.setModifiedAt(LocalDateTime.now());
-
-        return walletMapper.map(walletRepository.save(oldWallet));
-
+        return toResponse(walletMapper.map(walletRepository.save(oldWallet)));
     }
 
 
